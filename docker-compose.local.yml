@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shared}
+      POSTGRES_USER: ${POSTGRES_USER:-shared}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shared_local_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-shared}:${POSTGRES_PASSWORD:-shared_local_dev}@db:5432/${POSTGRES_DB:-shared}?sslmode=disable
+      PORT: "8080"
+      UPLOAD_DIR: /uploads
+      PUBLIC_ORIGIN: http://localhost:5173
+      COOKIE_SECURE: "false"
+      MAX_FILE_MIB: ${MAX_FILE_MIB:-25}
+    volumes:
+      - uploads:/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  web:
+    build:
+      context: ./frontend
+      target: dev
+    environment:
+      DEV_SERVER_PORT: "5173"
+      API_PROXY_TARGET: http://api:8080
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  postgres_data:
+  uploads:

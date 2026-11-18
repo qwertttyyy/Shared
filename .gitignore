@@ -1,0 +1,38 @@
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+.envrc
+.ssh/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Build output and caches
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+*.exe
+*.test
+/backend/server
+/server
+
+# Runtime data and backups
+uploads/
+backups/
+*.db
+*.db-shm
+*.db-wal
+*.dump
+*.sql.gz
+*.log
+
+# Local tools and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

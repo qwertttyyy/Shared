@@ -1,0 +1,43 @@
+@import "./fonts/fonts.css";
+@import "tailwindcss" source("./");
+
+@theme {
+  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Unbounded", "Manrope", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-shared-bg: #f6f7fb;
+  --color-shared-ink: #14161f;
+  --color-shared-muted: #5c6175;
+  --color-shared-error: #a12636;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-shared-bg);
+    color: var(--color-shared-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button:not(:disabled) { cursor: pointer; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  :focus-visible {
+    outline: 2px solid var(--color-indigo-600);
+    outline-offset: 3px;
+  }
+
+  body:has(.image-lightbox[open]) { overflow: hidden; }
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(128 128 128 / 24%) transparent;
+}
+
+.image-lightbox::backdrop { background: transparent; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-image-controls { background: white; }
+  .glass-lightbox { background: #14161f; }
+}
