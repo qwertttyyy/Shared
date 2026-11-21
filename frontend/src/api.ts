@@ -25,7 +25,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (csrfToken && options.method && options.method.toUpperCase() !== 'GET') headers.set('X-CSRF-Token', csrfToken)
 
-  const response = await fetch(`/api${path}`, { ...options, headers, credentials: 'same-origin' })
+  const response = await fetch(`/api${path}`, { ...options, headers, credentials: 'same-origin' }).catch((error: unknown) => {
+    if (error instanceof TypeError) throw new Error('Нет связи с сервером. Проверьте подключение и повторите.')
+    throw error
+  })
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as { error?: string }
     throw new ApiError(body.error || `Ошибка запроса (${response.status})`, response.status)

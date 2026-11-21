@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { api, type Session } from '../api'
+import { AppTitle } from './AppTitle'
+import { InstallAppButton } from './PwaControls'
 
 const minPasswordLength = 6
 const inputClass = 'min-h-11 rounded-2xl bg-[#F1F3FA] px-4 text-shared-ink'
 
-export function AuthPage({ onAuth }: { onAuth: (session: Session) => void }) {
+export function AuthPage({ online, onAuth }: { online: boolean; onAuth: (session: Session) => void }) {
   const [registering, setRegistering] = useState(false)
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
@@ -41,7 +43,10 @@ export function AuthPage({ onAuth }: { onAuth: (session: Session) => void }) {
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-12">
       <div className="w-full max-w-[340px] rounded-[30px] bg-white p-7 shadow-[0_18px_45px_-20px_rgba(20,22,31,0.10)] ring-1 ring-shared-ink/5">
-        <h1 className="text-center font-display text-2xl font-bold tracking-[-0.03em]">Shared</h1>
+        <AppTitle className="justify-center text-2xl" />
+        {!online ? (
+          <p className="mt-3 text-center text-sm text-shared-muted" role="status">Для входа нужно подключение к интернету.</p>
+        ) : null}
         <form className="mt-6 grid gap-4" onSubmit={submit}>
           <label className="grid gap-1.5 text-sm font-semibold">
             Логин
@@ -71,6 +76,7 @@ export function AuthPage({ onAuth }: { onAuth: (session: Session) => void }) {
           type="button" disabled={mutation.isPending} onClick={switchMode}>
           {registering ? 'Войти' : 'Зарегистрироваться'}
         </button>
+        <InstallAppButton className="mt-1 min-h-11 w-full rounded-full bg-[#F1F3FA] px-4 text-sm font-semibold hover:bg-indigo-50" />
       </div>
     </main>
   )

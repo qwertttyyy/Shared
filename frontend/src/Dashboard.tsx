@@ -19,15 +19,18 @@ const SharedWorkspace = lazy(() => import('./components/SharedWorkspace')
 
 type DashboardProps = {
   userId: string
+  online: boolean
   onLogout: () => void
   loggingOut: boolean
   logoutError?: string
 }
 
-function useRealtime(userId: string) {
+function useRealtime(userId: string, online: boolean) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
+    if (!online) return
+
     let disposed = false
     let socket: WebSocket | undefined
     let reconnect: ReturnType<typeof setTimeout> | undefined
@@ -73,20 +76,21 @@ function useRealtime(userId: string) {
       clearTimeout(reconnect)
       socket?.close()
     }
-  }, [queryClient, userId])
+  }, [online, queryClient, userId])
 }
 
 const pageButton = 'min-h-11 rounded-full bg-white px-4 font-semibold text-shared-ink enabled:hover:bg-indigo-50 disabled:opacity-45'
 const selectPage = (data: ItemsPage) => ({ ...data, items: data.items.map(toSharedItem) })
 
-export function Dashboard({ userId, onLogout, loggingOut, logoutError }: DashboardProps) {
+export function Dashboard({ userId, online, onLogout, loggingOut, logoutError }: DashboardProps) {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
-  useRealtime(userId)
+  useRealtime(userId, online)
 
   const items = useQuery({
     queryKey: ['items', userId, page],
     queryFn: ({ signal }) => api.items(page, signal),
+    refetchOnReconnect: 'always',
     placeholderData: keepPreviousData,
     select: selectPage,
   })
@@ -113,15 +117,16 @@ export function Dashboard({ userId, onLogout, loggingOut, logoutError }: Dashboa
     },
   })
 
-  const data = items.isError ? undefined : items.data
+  const data = items.isError && online ? undefined : items.data
+
   return (
     <Suspense fallback={
       <main className="grid min-h-dvh place-items-center"><p role="status">Загрузка…</p></main>
     }>
-      <SharedWorkspace items={data?.items ?? []} loading={items.isFetching} saving={save.isPending}
+      <SharedWorkspace items={data?.items ?? []} online={online} loading={items.isFetching} saving={save.isPending}
         onSave={save.mutateAsync} onLogout={onLogout} loggingOut={loggingOut} logoutError={logoutError}>
-        {items.isPending ? <p className="text-sm text-shared-muted" role="status">Загрузка…</p> : null}
-        {items.isError ? (
+        {items.isPending && online ? <p className="text-sm text-shared-muted" role="status">Загрузка…</p> : null}
+        {items.isError && online ? (
           <div className="text-sm">
             <p className="text-shared-error" role="alert">Не удалось загрузить записи.</p>
             <button type="button" className="mt-2 min-h-11 rounded-full bg-white px-4 font-semibold"

@@ -48,6 +48,14 @@ npm run dev
 
 Тесты API запускаются командой `go test ./...` из `backend`, проверка сборки интерфейса — командой `npm run build` из `frontend`.
 
+## Установка приложения (PWA)
+
+Откройте Shared по HTTPS. В Chrome и Edge выберите «Установить» в приложении или в меню браузера. На iPhone и iPad в Safari откройте «Поделиться» → «На экран „Домой“», на macOS в Safari — «Файл» → «Добавить в Dock».
+
+После первого запуска с подключением интерфейс Shared открывается и офлайн. Вход, загрузка файлов и сохранение записей требуют соединения с сервером. Уже открытые заметки доступны в памяти текущего окна. Сессия и содержимое записей и файлов хранятся вне кэша PWA. Новая версия применяется после закрытия всех открытых окон и вкладок Shared.
+
+Для локальной проверки PWA выполните `npm run build`, затем `npm run preview` из `frontend` и откройте `http://localhost:4173`. Service worker подключается в сборке, которую обслуживает preview.
+
 ## Развёртывание в prod
 
 Системный Nginx раздаёт сборку из `/var/www/shared` и проксирует `/api` и WebSocket на `127.0.0.1:18080`. Go API и PostgreSQL работают в Docker Compose. База доступна внутри Docker-сети.
@@ -61,7 +69,7 @@ bash scripts/deploy.sh
 
 Скрипт собирает интерфейс через Docker Buildx, запускает сервисы из `docker-compose.prod.yml` и публикует сборку после проверки готовности API.
 
-При первом развёртывании установите [конфиг Nginx](deploy/nginx/shared.conf). Если сайт уже настроен, обновите его конфиг с сохранением настроек TLS. При смене порта API сопоставьте `API_HOST_PORT` с `proxy_pass`.
+При первом развёртывании установите [конфиг Nginx](deploy/nginx/shared.conf). Для существующего сайта перенесите настройки `/sw.js`, `/manifest.webmanifest` и `/icons/` в HTTPS-конфиг, сохранив настройки TLS. При смене порта API сопоставьте `API_HOST_PORT` с `proxy_pass`.
 
 ```bash
 sudo install -m 0644 deploy/nginx/shared.conf /etc/nginx/sites-available/shared
@@ -75,6 +83,16 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx --redirect -d shared.qwertttyyy.ru
 curl -fsS https://shared.qwertttyyy.ru/api/health
 ```
+
+После применения HTTPS-конфига и публикации сборки проверьте ответы `200` и типы файлов PWA.
+
+```bash
+curl -fsSI https://shared.qwertttyyy.ru/sw.js
+curl -fsSI https://shared.qwertttyyy.ru/manifest.webmanifest
+curl -fsSI https://shared.qwertttyyy.ru/icons/app-192.png
+```
+
+Ожидаемые `Content-Type` по порядку — `application/javascript`, `application/manifest+json` и `image/png`.
 
 Для обновлений выполняйте `git pull --ff-only` и `bash scripts/deploy.sh` в той же рабочей копии. Резервная копия данных должна включать PostgreSQL и том `uploads`.
 

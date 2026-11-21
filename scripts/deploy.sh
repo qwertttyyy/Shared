@@ -20,17 +20,26 @@ trap cleanup EXIT
 
 "${compose[@]}" config --quiet
 docker buildx build --target static --output "type=local,dest=$build_dir" frontend
-test -s "$build_dir/index.html"
+for file in index.html manifest.webmanifest sw.js; do
+  test -s "$build_dir/$file"
+done
 test -d "$build_dir/assets"
+test -d "$build_dir/icons"
 "${compose[@]}" up --detach --build --wait --wait-timeout 120
 
-# Publish new assets before switching HTML. Open tabs can still load older chunks.
-sudo install -d -m 0755 "$docroot/assets"
+# Keep earlier hashed assets available for open tabs.
+sudo install -d -m 0755 "$docroot/assets" "$docroot/icons"
 publish_dir=$(sudo mktemp -d "$docroot/.publish.XXXXXX")
-for asset in "$build_dir"/assets/*; do
-  filename=${asset##*/}
-  sudo install -m 0644 "$asset" "$publish_dir/$filename"
-  sudo mv -f -- "$publish_dir/$filename" "$docroot/assets/$filename"
+for directory in assets icons; do
+  for asset in "$build_dir/$directory"/*; do
+    filename=${asset##*/}
+    sudo install -m 0644 "$asset" "$publish_dir/$filename"
+    sudo mv -f -- "$publish_dir/$filename" "$docroot/$directory/$filename"
+  done
 done
-sudo install -m 0644 "$build_dir/index.html" "$publish_dir/index.html"
-sudo mv -f -- "$publish_dir/index.html" "$docroot/index.html"
+
+# The next worker must be able to precache the newly published HTML and assets.
+for file in manifest.webmanifest index.html sw.js; do
+  sudo install -m 0644 "$build_dir/$file" "$publish_dir/$file"
+  sudo mv -f -- "$publish_dir/$file" "$docroot/$file"
+done
