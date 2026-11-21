@@ -1,0 +1,363 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@700&display=swap');
+
+  #shared-mono-icons {
+    --shared-bg: #f6f7fb;
+    --shared-ink: #14161f;
+    --shared-indigo: #4f46e5;
+    --shared-note: #fff1c2;
+    --shared-file: #dce8ff;
+    --shared-navy: #102a66;
+    display: grid;
+    gap: 20px;
+  }
+
+  #shared-mono-icons .shared-lineup {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px 12px;
+    list-style: none;
+    margin: 0;
+    padding: 5px 0 0;
+  }
+
+  #shared-mono-icons .shared-lineup li {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 4px;
+    text-align: center;
+  }
+
+  #shared-mono-icons .shared-lineup .shared-mark {
+    --mark-size: clamp(72px, 13.5vw, 96px);
+    margin-bottom: 7px;
+  }
+
+  #shared-mono-icons .shared-name { font-weight: 500; }
+  #shared-mono-icons .shared-caption { color: var(--muted-foreground, #5c6175); }
+
+  #shared-mono-icons .shared-mark {
+    box-sizing: border-box;
+    display: block;
+    position: relative;
+    flex: 0 0 auto;
+    isolation: isolate;
+    width: var(--mark-size);
+    height: var(--mark-size);
+    border-radius: 26%;
+  }
+
+  #shared-mono-icons .shared-mark::before,
+  #shared-mono-icons .shared-mark::after,
+  #shared-mono-icons .shared-mark .shared-glyph,
+  #shared-mono-icons .shared-glyph::before,
+  #shared-mono-icons .shared-glyph::after {
+    box-sizing: border-box;
+    position: absolute;
+  }
+
+  #shared-mono-icons .shared-type,
+  #shared-mono-icons .shared-fold { background: rgb(118, 214, 132); }
+
+  #shared-mono-icons .shared-drawn,
+  #shared-mono-icons .shared-clip {
+    background: #fff;
+    box-shadow: inset 0 0 0 max(1px, calc(var(--mark-size) * .024)) #000;
+  }
+
+  #shared-mono-icons .shared-type {
+    display: grid;
+    place-items: center;
+    padding-right: .07em;
+    color: #fff;
+    font: 700 calc(var(--mark-size) * .49) / 1 Unbounded, 'Arial Black', sans-serif;
+    letter-spacing: -.075em;
+    white-space: nowrap;
+  }
+
+  #shared-mono-icons .shared-drawn .shared-letter-s { inset: 29% 49% 26% 16%; }
+  #shared-mono-icons .shared-drawn .shared-letter-h { inset: 23% 17% 26% 57%; }
+
+  #shared-mono-icons .shared-letter-s::before,
+  #shared-mono-icons .shared-letter-s::after {
+    content: '';
+    width: 84%;
+    height: 58%;
+    border: calc(var(--mark-size) * .085) solid #000;
+  }
+  #shared-mono-icons .shared-letter-s::before {
+    top: 0;
+    left: 0;
+    border-right: 0;
+    border-radius: 999px 0 0 999px;
+  }
+  #shared-mono-icons .shared-letter-s::after {
+    right: 0;
+    bottom: 0;
+    border-left: 0;
+    border-radius: 0 999px 999px 0;
+  }
+  #shared-mono-icons .shared-letter-h::before {
+    content: '';
+    inset: 0 auto 0 0;
+    width: calc(var(--mark-size) * .085);
+    background: #000;
+  }
+  #shared-mono-icons .shared-letter-h::after {
+    content: '';
+    inset: 30% 0 0 0;
+    border: calc(var(--mark-size) * .085) solid #000;
+    border-bottom: 0;
+    border-radius: 999px 999px 0 0;
+  }
+
+  #shared-mono-icons .shared-fold::before {
+    content: '';
+    inset: 21% 25% 64% 59%;
+    background: #fff;
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+  }
+  #shared-mono-icons .shared-fold .shared-glyph {
+    inset: 21% 25% 21% 25%;
+    border-radius: 11%;
+    background: #fff;
+    clip-path: polygon(0 0, 60% 0, 60% 32%, 100% 32%, 100% 100%, 0 100%);
+  }
+  #shared-mono-icons .shared-fold .shared-glyph::before,
+  #shared-mono-icons .shared-fold .shared-glyph::after {
+    content: '';
+    left: 20%;
+    height: 10%;
+    border-radius: 999px;
+    background: #000;
+  }
+  #shared-mono-icons .shared-fold .shared-glyph::before { top: 45%; width: 60%; }
+  #shared-mono-icons .shared-fold .shared-glyph::after { top: 66%; width: 42%; }
+
+  #shared-mono-icons .shared-clip .shared-glyph {
+    inset: 17% 31%;
+    transform: rotate(36deg);
+  }
+  #shared-mono-icons .shared-clip .shared-glyph::before,
+  #shared-mono-icons .shared-clip .shared-glyph::after {
+    content: '';
+    border: calc(var(--mark-size) * .078) solid #000;
+  }
+  #shared-mono-icons .shared-clip .shared-glyph::before {
+    inset: 16% 0 0;
+    border-top: 0;
+    border-radius: 0 0 999px 999px;
+  }
+  #shared-mono-icons .shared-clip .shared-glyph::after {
+    inset: 0 0 26% 37%;
+    border-bottom: 0;
+    border-radius: 999px 999px 0 0;
+  }
+
+  #shared-mono-icons .shared-context { display: grid; gap: 8px; }
+  #shared-mono-icons .shared-context > h2 { margin: 0; }
+  #shared-mono-icons .shared-stage { padding: 4px 0; }
+  #shared-mono-icons .shared-stage[hidden] { display: none; }
+
+  #shared-mono-icons .shared-window {
+    overflow: hidden;
+    border-radius: 17px;
+    border: 1px solid #e0e2ec;
+    background: var(--shared-bg);
+    color: var(--shared-ink);
+    font-family: Manrope, 'Segoe UI', sans-serif;
+    text-align: left;
+  }
+  #shared-mono-icons .shared-browser {
+    display: flex;
+    align-items: end;
+    min-height: 37px;
+    padding: 0 11px;
+    background: #e7e9f3;
+  }
+  #shared-mono-icons .shared-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 29px;
+    width: min(128px, 100%);
+    padding: 0 10px;
+    border-radius: 10px 10px 0 0;
+    background: var(--shared-bg);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #shared-mono-icons .shared-tab .shared-mark { --mark-size: 16px; }
+  #shared-mono-icons .shared-workspace {
+    display: grid;
+    gap: 14px;
+    max-width: 670px;
+    margin-inline: auto;
+    padding: 15px clamp(12px, 3vw, 24px) 18px;
+  }
+  #shared-mono-icons .shared-header,
+  #shared-mono-icons .shared-title,
+  #shared-mono-icons .shared-composer,
+  #shared-mono-icons .shared-action {
+    display: flex;
+    align-items: center;
+  }
+  #shared-mono-icons .shared-header,
+  #shared-mono-icons .shared-composer { justify-content: space-between; gap: 8px; }
+  #shared-mono-icons .shared-title {
+    gap: 9px;
+    font: 700 19px / 1.2 Unbounded, Manrope, sans-serif;
+    letter-spacing: -.035em;
+  }
+  #shared-mono-icons .shared-title .shared-mark { --mark-size: var(--header-mark-size, 28px); }
+  #shared-mono-icons .shared-exit {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: white;
+    color: #5c6175;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #shared-mono-icons .shared-composer {
+    padding: 7px 8px;
+    border: 1px solid #14161f0b;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 7px 18px #14161f0a;
+  }
+  #shared-mono-icons .shared-action {
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  #shared-mono-icons .shared-note-action { color: #5c6175; padding-left: 3px; }
+  #shared-mono-icons .shared-plus,
+  #shared-mono-icons .shared-file-action { background: #f1f3fa; border-radius: 999px; }
+  #shared-mono-icons .shared-plus {
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    color: var(--shared-ink);
+    font-size: 17px;
+    line-height: 1;
+  }
+  #shared-mono-icons .shared-file-action { padding: 6px 9px; }
+  #shared-mono-icons .shared-file-action [data-lucide] { color: var(--shared-indigo); }
+  #shared-mono-icons .shared-feed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+  #shared-mono-icons .shared-feed-item {
+    padding: 14px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+  #shared-mono-icons .shared-feed-note { background: var(--shared-note); color: #2d2408; }
+  #shared-mono-icons .shared-feed-file {
+    margin-top: 8px;
+    background: var(--shared-file);
+    color: var(--shared-navy);
+  }
+
+  @media (max-width: 520px) {
+    #shared-mono-icons .shared-lineup { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #shared-mono-icons .shared-feed { grid-template-columns: minmax(0, 1fr); }
+    #shared-mono-icons .shared-feed-file { margin-top: 0; }
+  }
+</style>
+
+<div id="shared-mono-icons" aria-label="Чёрно-белые иконки Shared">
+  <ul class="shared-lineup" aria-label="Четыре варианта">
+    <li>
+      <span class="shared-mark shared-type" data-mark="type" aria-hidden="true">Sh</span>
+      <span class="shared-name">Широкая Sh</span>
+      <span class="shared-caption text-small">Шрифт Shared</span>
+    </li>
+    <li>
+      <span class="shared-mark shared-drawn" data-mark="drawn" aria-hidden="true">
+        <span class="shared-glyph shared-letter-s"></span>
+        <span class="shared-glyph shared-letter-h"></span>
+      </span>
+      <span class="shared-name">Геометрическая Sh</span>
+      <span class="shared-caption text-small">Рисованные буквы</span>
+    </li>
+    <li>
+      <span class="shared-mark shared-fold" data-mark="fold" aria-hidden="true"><span class="shared-glyph"></span></span>
+      <span class="shared-name">Лист</span>
+      <span class="shared-caption text-small">Заметки</span>
+    </li>
+    <li>
+      <span class="shared-mark shared-clip" data-mark="clip" aria-hidden="true"><span class="shared-glyph"></span></span>
+      <span class="shared-name">Скрепка</span>
+      <span class="shared-caption text-small">Вложения</span>
+    </li>
+  </ul>
+
+  <section class="shared-context" aria-labelledby="shared-mono-context-heading">
+    <h2 id="shared-mono-context-heading">В шапке приложения и на вкладке браузера</h2>
+    <div class="viz-carousel" aria-label="Иконки в интерфейсе Shared" data-previous-label="Предыдущий вариант" data-next-label="Следующий вариант">
+      <section class="shared-stage" data-mark="type" data-variant="Широкая Sh" aria-label="Широкая Sh в интерфейсе"></section>
+      <section class="shared-stage" data-mark="drawn" data-variant="Геометрическая Sh" aria-label="Геометрическая Sh в интерфейсе" hidden></section>
+      <section class="shared-stage" data-mark="fold" data-variant="Лист" aria-label="Лист в интерфейсе" hidden></section>
+      <section class="shared-stage" data-mark="clip" data-variant="Скрепка" aria-label="Скрепка в интерфейсе" hidden></section>
+    </div>
+  </section>
+
+  <template id="shared-mono-context-template">
+    <div class="shared-window">
+      <div class="shared-browser">
+        <div class="shared-tab" role="group" aria-label="Вкладка Shared, иконка 16 пикселей">
+          <span data-mark-slot></span>
+          Shared
+        </div>
+      </div>
+      <div class="shared-workspace">
+        <div class="shared-header" role="group" aria-label="Шапка приложения">
+          <div class="shared-title">
+            <span data-mark-slot></span>
+            Shared
+          </div>
+          <span class="shared-exit" aria-hidden="true">Выйти</span>
+        </div>
+        <div class="shared-composer" aria-hidden="true">
+          <span class="shared-action shared-note-action"><span class="shared-plus">+</span>Заметка</span>
+          <span class="shared-action shared-file-action"><i data-lucide="paperclip"></i>Прикрепить файл</span>
+        </div>
+        <div class="shared-feed" aria-hidden="true">
+          <div class="shared-feed-item shared-feed-note">Идеи на выходные</div>
+          <div class="shared-feed-item shared-feed-file">Маршрут.pdf</div>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  (() => {
+    const root = document.getElementById('shared-mono-icons');
+    const template = root.querySelector('#shared-mono-context-template');
+    root.querySelectorAll('.shared-stage').forEach(stage => {
+      const mark = root.querySelector(`.shared-lineup [data-mark="${stage.dataset.mark}"]`);
+      const preview = template.content.cloneNode(true);
+      preview.querySelectorAll('[data-mark-slot]').forEach(slot => slot.replaceWith(mark.cloneNode(true)));
+      stage.append(preview);
+
+      if (globalThis.Tweak) {
+        const header = stage.querySelector('.shared-header');
+        const settings = { size: 28 };
+        const tweak = new globalThis.Tweak({
+          container: header,
+          onChange: () => header.style.setProperty('--header-mark-size', `${settings.size}px`),
+        });
+        tweak.addSlider(settings, 'size', { label: 'Размер иконки', min: 20, max: 36, unit: 'px' });
+      }
+    });
+  })();
+</script>

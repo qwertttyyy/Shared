@@ -1,0 +1,343 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@700&display=swap');
+
+  #shared-icon-concepts {
+    --shared-bg: #f6f7fb;
+    --shared-ink: #14161f;
+    --shared-indigo: #4f46e5;
+    --shared-note: #fff1c2;
+    --shared-file: #dce8ff;
+    --shared-navy: #102a66;
+    display: grid;
+    gap: 20px;
+  }
+
+  #shared-icon-concepts .shared-lineup {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px 12px;
+    list-style: none;
+    margin: 0;
+    padding: 5px 0 0;
+  }
+
+  #shared-icon-concepts .shared-lineup li {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 4px;
+    text-align: center;
+  }
+
+  #shared-icon-concepts .shared-lineup .shared-mark {
+    --mark-size: clamp(72px, 13.5vw, 96px);
+    margin-bottom: 7px;
+  }
+
+  #shared-icon-concepts .shared-name { font-weight: 500; }
+  #shared-icon-concepts .shared-caption { color: var(--muted-foreground, #5c6175); }
+
+  #shared-icon-concepts .shared-mark {
+    box-sizing: border-box;
+    display: block;
+    position: relative;
+    flex: 0 0 auto;
+    isolation: isolate;
+    width: var(--mark-size);
+    height: var(--mark-size);
+    border-radius: 26%;
+  }
+
+  #shared-icon-concepts .shared-mark::before,
+  #shared-icon-concepts .shared-mark::after,
+  #shared-icon-concepts .shared-glyph,
+  #shared-icon-concepts .shared-glyph::before,
+  #shared-icon-concepts .shared-glyph::after {
+    box-sizing: border-box;
+    position: absolute;
+  }
+
+  #shared-icon-concepts .shared-stack { background: var(--shared-indigo); }
+  #shared-icon-concepts .shared-stack::before {
+    content: '';
+    inset: 21% 34% 30% 24%;
+    border-radius: 20%;
+    background: #bfc4ff;
+    transform: rotate(-13deg);
+  }
+  #shared-icon-concepts .shared-stack .shared-glyph {
+    inset: 33% 24% 19% 38%;
+    border-radius: 20%;
+    background: white;
+    transform: rotate(10deg);
+  }
+  #shared-icon-concepts .shared-stack .shared-glyph::before,
+  #shared-icon-concepts .shared-stack .shared-glyph::after {
+    content: '';
+    left: 24%;
+    height: 12%;
+    border-radius: 999px;
+    background: var(--shared-indigo);
+  }
+  #shared-icon-concepts .shared-stack .shared-glyph::before { top: 33%; width: 52%; }
+  #shared-icon-concepts .shared-stack .shared-glyph::after { top: 55%; width: 34%; }
+
+  #shared-icon-concepts .shared-monogram { background: var(--shared-ink); }
+  #shared-icon-concepts .shared-monogram::before,
+  #shared-icon-concepts .shared-monogram::after {
+    content: '';
+    width: 45%;
+    height: 31%;
+    border: calc(var(--mark-size) * .10) solid #f8f7ff;
+  }
+  #shared-icon-concepts .shared-monogram::before {
+    top: 24%;
+    left: 23%;
+    border-right: 0;
+    border-radius: 999px 0 0 999px;
+  }
+  #shared-icon-concepts .shared-monogram::after {
+    bottom: 24%;
+    right: 23%;
+    border-left: 0;
+    border-radius: 0 999px 999px 0;
+  }
+
+  #shared-icon-concepts .shared-sync { background: #ece6ff; }
+  #shared-icon-concepts .shared-sync::before,
+  #shared-icon-concepts .shared-sync::after {
+    content: '';
+    width: 58%;
+    height: 22%;
+    background: #392b8e;
+    clip-path: polygon(0 28%, 66% 28%, 66% 0, 100% 50%, 66% 100%, 66% 72%, 0 72%);
+  }
+  #shared-icon-concepts .shared-sync::before { top: 25%; left: 22%; }
+  #shared-icon-concepts .shared-sync::after { bottom: 25%; right: 22%; transform: rotate(180deg); }
+
+  #shared-icon-concepts .shared-pocket { background: var(--shared-file); }
+  #shared-icon-concepts .shared-pocket::before {
+    content: '';
+    inset: 28% 23% 25% 21%;
+    background: #3c5aa2;
+    border-radius: 13%;
+    clip-path: polygon(0 0, 39% 0, 51% 17%, 100% 17%, 100% 100%, 0 100%);
+  }
+  #shared-icon-concepts .shared-pocket .shared-glyph {
+    inset: 30% 29% 33% 43%;
+    transform: rotate(11deg);
+    border-radius: 14%;
+    background: var(--shared-note);
+  }
+  #shared-icon-concepts .shared-pocket::after {
+    content: '';
+    inset: 45% 19% 25% 21%;
+    border-radius: 15% 17% 21% 21%;
+    background: var(--shared-navy);
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+  }
+
+  #shared-icon-concepts .shared-context { display: grid; gap: 8px; }
+  #shared-icon-concepts .shared-context > h2 { margin: 0; }
+  #shared-icon-concepts .shared-stage { padding: 4px 0; }
+  #shared-icon-concepts .shared-stage[hidden] { display: none; }
+
+  #shared-icon-concepts .shared-window {
+    overflow: hidden;
+    border-radius: 17px;
+    border: 1px solid #e0e2ec;
+    background: var(--shared-bg);
+    color: var(--shared-ink);
+    font-family: Manrope, 'Segoe UI', sans-serif;
+    text-align: left;
+  }
+  #shared-icon-concepts .shared-browser {
+    display: flex;
+    align-items: end;
+    min-height: 37px;
+    padding: 0 11px;
+    background: #e7e9f3;
+  }
+  #shared-icon-concepts .shared-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 29px;
+    width: min(128px, 100%);
+    padding: 0 10px;
+    border-radius: 10px 10px 0 0;
+    background: var(--shared-bg);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #shared-icon-concepts .shared-tab .shared-mark { --mark-size: 16px; }
+  #shared-icon-concepts .shared-workspace {
+    display: grid;
+    gap: 14px;
+    max-width: 670px;
+    margin-inline: auto;
+    padding: 15px clamp(12px, 3vw, 24px) 18px;
+  }
+  #shared-icon-concepts .shared-header,
+  #shared-icon-concepts .shared-title,
+  #shared-icon-concepts .shared-composer,
+  #shared-icon-concepts .shared-action {
+    display: flex;
+    align-items: center;
+  }
+  #shared-icon-concepts .shared-header,
+  #shared-icon-concepts .shared-composer { justify-content: space-between; gap: 8px; }
+  #shared-icon-concepts .shared-title {
+    gap: 9px;
+    font: 700 19px / 1.2 Unbounded, Manrope, sans-serif;
+    letter-spacing: -.035em;
+  }
+  #shared-icon-concepts .shared-title .shared-mark { --mark-size: var(--header-mark-size, 28px); }
+  #shared-icon-concepts .shared-exit {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: white;
+    color: #5c6175;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #shared-icon-concepts .shared-composer {
+    padding: 7px 8px;
+    border: 1px solid #14161f0b;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 7px 18px #14161f0a;
+  }
+  #shared-icon-concepts .shared-action {
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  #shared-icon-concepts .shared-note-action { color: #5c6175; padding-left: 3px; }
+  #shared-icon-concepts .shared-plus,
+  #shared-icon-concepts .shared-file-action { background: #f1f3fa; border-radius: 999px; }
+  #shared-icon-concepts .shared-plus {
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    color: var(--shared-ink);
+    font-size: 17px;
+    line-height: 1;
+  }
+  #shared-icon-concepts .shared-file-action { padding: 6px 9px; }
+  #shared-icon-concepts .shared-file-action [data-lucide] { color: var(--shared-indigo); }
+  #shared-icon-concepts .shared-feed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+  #shared-icon-concepts .shared-feed-item {
+    padding: 14px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+  #shared-icon-concepts .shared-feed-note { background: var(--shared-note); color: #2d2408; }
+  #shared-icon-concepts .shared-feed-file {
+    margin-top: 8px;
+    background: var(--shared-file);
+    color: var(--shared-navy);
+  }
+
+  @media (max-width: 520px) {
+    #shared-icon-concepts .shared-lineup { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #shared-icon-concepts .shared-feed { grid-template-columns: minmax(0, 1fr); }
+    #shared-icon-concepts .shared-feed-file { margin-top: 0; }
+  }
+</style>
+
+<div id="shared-icon-concepts" aria-label="Варианты иконки Shared">
+  <ul class="shared-lineup" aria-label="Четыре варианта">
+    <li>
+      <span class="shared-mark shared-stack" aria-hidden="true"><span class="shared-glyph"></span></span>
+      <span class="shared-name">Стопка</span>
+      <span class="shared-caption text-small">Карточки из ленты</span>
+    </li>
+    <li>
+      <span class="shared-mark shared-monogram" aria-hidden="true"></span>
+      <span class="shared-name">Монограмма</span>
+      <span class="shared-caption text-small">Буква S</span>
+    </li>
+    <li>
+      <span class="shared-mark shared-sync" aria-hidden="true"></span>
+      <span class="shared-name">Синхронизация</span>
+      <span class="shared-caption text-small">Обмен между устройствами</span>
+    </li>
+    <li>
+      <span class="shared-mark shared-pocket" aria-hidden="true"><span class="shared-glyph"></span></span>
+      <span class="shared-name">Карман</span>
+      <span class="shared-caption text-small">Файл и заметка</span>
+    </li>
+  </ul>
+
+  <section class="shared-context" aria-labelledby="shared-context-heading">
+    <h2 id="shared-context-heading">В шапке приложения и на вкладке браузера</h2>
+    <div class="viz-carousel" aria-label="Иконки в интерфейсе Shared" data-previous-label="Предыдущий вариант" data-next-label="Следующий вариант">
+      <section class="shared-stage" data-variant="Стопка" aria-label="Стопка в интерфейсе"></section>
+      <section class="shared-stage" data-variant="Монограмма" aria-label="Монограмма в интерфейсе" hidden></section>
+      <section class="shared-stage" data-variant="Синхронизация" aria-label="Синхронизация в интерфейсе" hidden></section>
+      <section class="shared-stage" data-variant="Карман" aria-label="Карман в интерфейсе" hidden></section>
+    </div>
+  </section>
+
+  <template id="shared-icon-context-template">
+    <div class="shared-window">
+      <div class="shared-browser">
+        <div class="shared-tab" role="group" aria-label="Вкладка Shared, иконка 16 пикселей">
+          <span class="shared-mark" aria-hidden="true"><span class="shared-glyph"></span></span>
+          Shared
+        </div>
+      </div>
+      <div class="shared-workspace">
+        <div class="shared-header" role="group" aria-label="Шапка приложения">
+          <div class="shared-title">
+            <span class="shared-mark" aria-hidden="true"><span class="shared-glyph"></span></span>
+            Shared
+          </div>
+          <span class="shared-exit" aria-hidden="true">Выйти</span>
+        </div>
+        <div class="shared-composer" aria-hidden="true">
+          <span class="shared-action shared-note-action"><span class="shared-plus">+</span>Заметка</span>
+          <span class="shared-action shared-file-action"><i data-lucide="paperclip"></i>Прикрепить файл</span>
+        </div>
+        <div class="shared-feed" aria-hidden="true">
+          <div class="shared-feed-item shared-feed-note">Идеи на выходные</div>
+          <div class="shared-feed-item shared-feed-file">Маршрут.pdf</div>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  (() => {
+    const root = document.getElementById('shared-icon-concepts');
+    const template = root.querySelector('#shared-icon-context-template');
+    const marks = ['shared-stack', 'shared-monogram', 'shared-sync', 'shared-pocket'];
+
+    root.querySelectorAll('.shared-stage').forEach((stage, index) => {
+      const preview = template.content.cloneNode(true);
+      preview.querySelectorAll('.shared-mark').forEach(mark => mark.classList.add(marks[index]));
+      stage.append(preview);
+
+      if (globalThis.Tweak) {
+        const header = stage.querySelector('.shared-header');
+        const settings = { size: 28 };
+        const tweak = new globalThis.Tweak({
+          container: header,
+          onChange: () => header.style.setProperty('--header-mark-size', `${settings.size}px`),
+        });
+        tweak.addSlider(settings, 'size', { label: 'Размер иконки', min: 20, max: 36, unit: 'px' });
+      }
+    });
+  })();
+</script>

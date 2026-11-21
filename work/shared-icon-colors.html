@@ -1,0 +1,280 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@700&display=swap');
+
+  #shared-icon-colors {
+    --shared-bg: #f6f7fb;
+    --shared-ink: #14161f;
+    --shared-indigo: #4f46e5;
+    --shared-note: #fff1c2;
+    --shared-file: #dce8ff;
+    --shared-navy: #102a66;
+    display: grid;
+    gap: 20px;
+  }
+
+  #shared-icon-colors .shared-lineup {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px 12px;
+    list-style: none;
+    margin: 0;
+    padding: 5px 0 0;
+  }
+
+  #shared-icon-colors .shared-lineup li {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 4px;
+    text-align: center;
+  }
+
+  #shared-icon-colors .shared-lineup .shared-mark {
+    --mark-size: clamp(72px, 13.5vw, 96px);
+    margin-bottom: 7px;
+  }
+
+  #shared-icon-colors .shared-name { font-weight: 500; }
+  #shared-icon-colors .shared-caption { color: var(--muted-foreground, #5c6175); }
+
+  #shared-icon-colors .shared-mark {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: var(--mark-size);
+    height: var(--mark-size);
+    border-radius: 26%;
+    padding-right: .07em;
+    background: var(--mark-bg);
+    color: var(--mark-ink);
+    font: 700 calc(var(--mark-size) * .49) / 1 Unbounded, 'Arial Black', sans-serif;
+    letter-spacing: -.075em;
+    white-space: nowrap;
+  }
+
+  #shared-icon-colors .shared-context { display: grid; gap: 8px; }
+  #shared-icon-colors .shared-context > h2 { margin: 0; }
+  #shared-icon-colors .shared-stage { padding: 4px 0; }
+  #shared-icon-colors .shared-stage[hidden] { display: none; }
+
+  #shared-icon-colors .shared-window {
+    overflow: hidden;
+    border-radius: 17px;
+    border: 1px solid #e0e2ec;
+    background: var(--shared-bg);
+    color: var(--shared-ink);
+    font-family: Manrope, 'Segoe UI', sans-serif;
+    text-align: left;
+  }
+  #shared-icon-colors .shared-browser {
+    display: flex;
+    align-items: end;
+    min-height: 37px;
+    padding: 0 11px;
+    background: #e7e9f3;
+  }
+  #shared-icon-colors .shared-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 29px;
+    width: min(128px, 100%);
+    padding: 0 10px;
+    border-radius: 10px 10px 0 0;
+    background: var(--shared-bg);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #shared-icon-colors .shared-tab .shared-mark { --mark-size: 16px; }
+  #shared-icon-colors .shared-workspace {
+    display: grid;
+    gap: 14px;
+    max-width: 670px;
+    margin-inline: auto;
+    padding: 15px clamp(12px, 3vw, 24px) 18px;
+  }
+  #shared-icon-colors .shared-header,
+  #shared-icon-colors .shared-title,
+  #shared-icon-colors .shared-composer,
+  #shared-icon-colors .shared-action {
+    display: flex;
+    align-items: center;
+  }
+  #shared-icon-colors .shared-header,
+  #shared-icon-colors .shared-composer { justify-content: space-between; gap: 8px; }
+  #shared-icon-colors .shared-title {
+    gap: 9px;
+    font: 700 19px / 1.2 Unbounded, Manrope, sans-serif;
+    letter-spacing: -.035em;
+  }
+  #shared-icon-colors .shared-title .shared-mark { --mark-size: 28px; }
+  #shared-icon-colors .shared-exit {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: white;
+    color: #5c6175;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #shared-icon-colors .shared-composer {
+    padding: 7px 8px;
+    border: 1px solid #14161f0b;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 7px 18px #14161f0a;
+  }
+  #shared-icon-colors .shared-action {
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  #shared-icon-colors .shared-note-action { color: #5c6175; padding-left: 3px; }
+  #shared-icon-colors .shared-plus,
+  #shared-icon-colors .shared-file-action { background: #f1f3fa; border-radius: 999px; }
+  #shared-icon-colors .shared-plus {
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    color: var(--shared-ink);
+    font-size: 17px;
+    line-height: 1;
+  }
+  #shared-icon-colors .shared-file-action { padding: 6px 9px; }
+  #shared-icon-colors .shared-file-action [data-lucide] { color: var(--shared-indigo); }
+  #shared-icon-colors .shared-feed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+  #shared-icon-colors .shared-feed-item {
+    padding: 14px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+  #shared-icon-colors .shared-feed-note { background: var(--shared-note); color: #2d2408; }
+  #shared-icon-colors .shared-feed-file {
+    margin-top: 8px;
+    background: var(--shared-file);
+    color: var(--shared-navy);
+  }
+
+  @media (max-width: 520px) {
+    #shared-icon-colors .shared-lineup { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #shared-icon-colors .shared-feed { grid-template-columns: minmax(0, 1fr); }
+    #shared-icon-colors .shared-feed-file { margin-top: 0; }
+  }
+</style>
+
+<div id="shared-icon-colors" aria-label="Цвета иконки Shared">
+  <ul class="shared-lineup" aria-label="Цветовые пары и контраст букв">
+    <li data-palette="green-ink" style="--mark-bg: #76D684; --mark-ink: #14161F">
+      <span class="shared-mark" aria-hidden="true">Sh</span>
+      <span class="shared-name">Зелёный и графит</span>
+      <span class="shared-caption text-small" data-contrast></span>
+    </li>
+    <li data-palette="green-white" style="--mark-bg: #76D684; --mark-ink: #FFFFFF">
+      <span class="shared-mark" aria-hidden="true">Sh</span>
+      <span class="shared-name">Зелёный и белый</span>
+      <span class="shared-caption text-small" data-contrast></span>
+    </li>
+    <li data-palette="gray-white" style="--mark-bg: #5C6175; --mark-ink: #FFFFFF">
+      <span class="shared-mark" aria-hidden="true">Sh</span>
+      <span class="shared-name">Серый и белый</span>
+      <span class="shared-caption text-small" data-contrast></span>
+    </li>
+    <li data-palette="lilac-ink" style="--mark-bg: #DED8F7; --mark-ink: #14161F">
+      <span class="shared-mark" aria-hidden="true">Sh</span>
+      <span class="shared-name">Сиреневый и графит</span>
+      <span class="shared-caption text-small" data-contrast></span>
+    </li>
+  </ul>
+
+  <section class="shared-context" aria-labelledby="shared-color-context-heading">
+    <h2 id="shared-color-context-heading">В шапке и на вкладке</h2>
+    <div class="viz-carousel" aria-label="Цветовые пары в интерфейсе Shared" data-previous-label="Предыдущий вариант" data-next-label="Следующий вариант">
+      <section class="shared-stage" data-palette="green-ink" data-variant="Зелёный и графит" aria-label="Зелёный и графит в интерфейсе"></section>
+      <section class="shared-stage" data-palette="green-white" data-variant="Зелёный и белый" aria-label="Зелёный и белый в интерфейсе" hidden></section>
+      <section class="shared-stage" data-palette="gray-white" data-variant="Серый и белый" aria-label="Серый и белый в интерфейсе" hidden></section>
+      <section class="shared-stage" data-palette="lilac-ink" data-variant="Сиреневый и графит" aria-label="Сиреневый и графит в интерфейсе" hidden></section>
+    </div>
+  </section>
+
+  <template id="shared-color-context-template">
+    <div class="shared-window">
+      <div class="shared-browser">
+        <div class="shared-tab" role="group" aria-label="Вкладка Shared, иконка 16 пикселей">
+          <span class="shared-mark" aria-hidden="true">Sh</span>
+          Shared
+        </div>
+      </div>
+      <div class="shared-workspace">
+        <div class="shared-header" role="group" aria-label="Шапка приложения">
+          <div class="shared-title">
+            <span class="shared-mark" aria-hidden="true">Sh</span>
+            Shared
+          </div>
+          <span class="shared-exit" aria-hidden="true">Выйти</span>
+        </div>
+        <div class="shared-composer" aria-hidden="true">
+          <span class="shared-action shared-note-action"><span class="shared-plus">+</span>Заметка</span>
+          <span class="shared-action shared-file-action"><i data-lucide="paperclip"></i>Прикрепить файл</span>
+        </div>
+        <div class="shared-feed" aria-hidden="true">
+          <div class="shared-feed-item shared-feed-note">Идеи на выходные</div>
+          <div class="shared-feed-item shared-feed-file">Маршрут.pdf</div>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  (() => {
+    const root = document.getElementById('shared-icon-colors');
+    const template = root.querySelector('#shared-color-context-template');
+    const number = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    function luminance(hex) {
+      const [red, green, blue] = hex.slice(1).match(/../g).map(pair => {
+        const channel = parseInt(pair, 16) / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    }
+
+    root.querySelectorAll('.shared-stage').forEach(stage => {
+      const swatch = root.querySelector(`.shared-lineup [data-palette="${stage.dataset.palette}"]`);
+      const contrast = swatch.querySelector('[data-contrast]');
+      const palette = {
+        background: swatch.style.getPropertyValue('--mark-bg').trim(),
+        letters: swatch.style.getPropertyValue('--mark-ink').trim(),
+      };
+      stage.append(template.content.cloneNode(true));
+
+      function render() {
+        for (const element of [swatch, stage]) {
+          element.style.setProperty('--mark-bg', palette.background);
+          element.style.setProperty('--mark-ink', palette.letters);
+        }
+        const background = luminance(palette.background);
+        const letters = luminance(palette.letters);
+        const ratio = (Math.max(background, letters) + 0.05) / (Math.min(background, letters) + 0.05);
+        contrast.textContent = `Контраст ${number.format(ratio)}:1`;
+      }
+
+      render();
+
+      if (globalThis.Tweak) {
+        const tweak = new globalThis.Tweak({ container: stage, onChange: render });
+        tweak.addColorPicker(palette, 'background', { label: 'Фон иконки', reference: '--mark-bg' });
+        tweak.addColorPicker(palette, 'letters', { label: 'Буквы Sh', reference: '--mark-ink' });
+      }
+    });
+  })();
+</script>
