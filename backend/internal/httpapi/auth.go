@@ -93,6 +93,14 @@ func (a *api) login(w http.ResponseWriter, r *http.Request) {
 }
 func (a *api) me(w http.ResponseWriter, r *http.Request) {
 	identity := auth.FromContext(r.Context())
+	if err := a.sessions.Renew(w, r, identity); err != nil {
+		if errors.Is(err, auth.ErrUnauthorized) {
+			fail(w, http.StatusUnauthorized, "Нужно войти в аккаунт")
+		} else {
+			fail(w, http.StatusServiceUnavailable, "Не удалось проверить сеанс. Повторите позже.")
+		}
+		return
+	}
 	respond(w, 200, map[string]any{"user": identity.User, "csrf_token": identity.CSRFToken})
 }
 func (a *api) logout(w http.ResponseWriter, r *http.Request) {

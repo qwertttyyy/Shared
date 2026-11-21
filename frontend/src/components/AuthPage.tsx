@@ -5,7 +5,7 @@ import { AppTitle } from './AppTitle'
 import { InstallAppButton } from './PwaControls'
 
 const minPasswordLength = 6
-const inputClass = 'min-h-11 rounded-2xl bg-[#F1F3FA] px-4 text-shared-ink'
+const inputClass = 'min-h-11 min-w-0 rounded-2xl bg-[#F1F3FA] px-4 text-base text-shared-ink'
 
 export function AuthPage({ online, onAuth }: { online: boolean; onAuth: (session: Session) => void }) {
   const [registering, setRegistering] = useState(false)
@@ -15,7 +15,10 @@ export function AuthPage({ online, onAuth }: { online: boolean; onAuth: (session
   const [error, setError] = useState('')
   const mutation = useMutation({
     mutationFn: () => registering ? api.register(login, password) : api.login(login, password),
-    onSuccess: onAuth,
+    onSuccess: session => {
+      if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur()
+      onAuth(session)
+    },
     onError: (err: Error) => setError(err.message),
   })
 

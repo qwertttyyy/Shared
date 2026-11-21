@@ -10,10 +10,11 @@ const isOnline = () => onlineManager.isOnline()
 export default function App() {
   const online = useSyncExternalStore(onlineManager.subscribe, isOnline)
   const queryClient = useQueryClient()
-  const session = useQuery({ queryKey: ['session'], queryFn: api.session, retry: 1, refetchOnReconnect: 'always' })
+  const session = useQuery({ queryKey: ['session'], queryFn: ({ signal }) => api.session(signal), retry: 1, refetchOnReconnect: 'always' })
   const logout = useMutation({
     mutationFn: api.logout,
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.cancelQueries({ queryKey: ['session'] })
       queryClient.setQueryData(['session'], null)
       queryClient.removeQueries({ queryKey: ['items'] })
     },
@@ -43,7 +44,8 @@ export default function App() {
     )
   }
   if (!session.data) {
-    return <AuthPage online={online} onAuth={value => {
+    return <AuthPage online={online} onAuth={async value => {
+      await queryClient.cancelQueries({ queryKey: ['session'] })
       logout.reset()
       queryClient.setQueryData(['session'], value)
     }} />

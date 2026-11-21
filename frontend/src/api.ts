@@ -42,9 +42,11 @@ function rememberSession(session: Session): Session {
 }
 
 export const api = {
-  async session(): Promise<Session | null> {
+  async session(signal?: AbortSignal): Promise<Session | null> {
     try {
-      return rememberSession(await request<Session>('/auth/me'))
+      const session = await request<Session>('/auth/me', { signal })
+      signal?.throwIfAborted()
+      return rememberSession(session)
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return null
       throw error
