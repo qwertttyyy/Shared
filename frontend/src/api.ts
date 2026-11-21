@@ -68,6 +68,12 @@ export const api = {
   createText(text: string) {
     return request<Item>('/items/text', { method: 'POST', body: JSON.stringify({ text }) })
   },
+  updateNote(id: string, text: string) {
+    return request<Item>('/items/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ text }) })
+  },
+  deleteNote(id: string) {
+    return request<{ ok: boolean }>('/items/' + encodeURIComponent(id), { method: 'DELETE' })
+  },
   upload(file: File, caption: string) {
     const body = new FormData()
     body.append('file', file)

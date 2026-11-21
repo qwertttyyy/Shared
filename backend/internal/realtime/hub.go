@@ -34,7 +34,11 @@ func (h *Hub) Unregister(userID string, client *Client) {
 	}
 }
 func (h *Hub) NotifyCreated(userID, itemID string) {
-	payload, err := json.Marshal(map[string]string{"type": "item.created", "item_id": itemID})
+	h.NotifyItem(userID, itemID, "item.created")
+}
+
+func (h *Hub) NotifyItem(userID, itemID, eventType string) {
+	payload, err := json.Marshal(map[string]string{"type": eventType, "item_id": itemID})
 	if err != nil {
 		return
 	}

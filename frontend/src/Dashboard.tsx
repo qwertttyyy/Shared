@@ -53,7 +53,7 @@ function useRealtime(userId: string, online: boolean) {
         if (disposed) return
         try {
           const message = JSON.parse(event.data as string) as { type?: string }
-          if (message.type === 'item.created') refresh()
+          if (message.type === 'item.created' || message.type === 'item.updated' || message.type === 'item.deleted') refresh()
         } catch { /* Ignore malformed notifications. */ }
       }
       connection.onclose = () => {
@@ -118,13 +118,32 @@ export function Dashboard({ userId, online, onLogout, loggingOut, logoutError }:
   })
 
   const data = items.isError && online ? undefined : items.data
+  const lastPage = !items.isPlaceholderData && data ? Math.max(data.pages, 1) : page
+  useEffect(() => {
+    if (page > lastPage) setPage(lastPage)
+  }, [lastPage, page])
+
+  function refreshItems() {
+    void queryClient.invalidateQueries({ queryKey: ['items', userId] })
+  }
+
+  async function updateNote(id: string, text: string) {
+    await api.updateNote(id, text)
+    refreshItems()
+  }
+
+  async function deleteNote(id: string) {
+    await api.deleteNote(id)
+    refreshItems()
+  }
 
   return (
     <Suspense fallback={
       <main className="grid min-h-dvh place-items-center"><p role="status">Загрузка…</p></main>
     }>
       <SharedWorkspace items={data?.items ?? []} online={online} loading={items.isFetching} saving={save.isPending}
-        onSave={save.mutateAsync} onLogout={onLogout} loggingOut={loggingOut} logoutError={logoutError}>
+        onSave={save.mutateAsync} onUpdateNote={updateNote} onDeleteNote={deleteNote}
+        onLogout={onLogout} loggingOut={loggingOut} logoutError={logoutError}>
         {items.isPending && online ? <p className="text-sm text-shared-muted" role="status">Загрузка…</p> : null}
         {items.isError && online ? (
           <div className="text-sm">
@@ -133,7 +152,7 @@ export function Dashboard({ userId, online, onLogout, loggingOut, logoutError }:
               onClick={() => void items.refetch()}>Повторить</button>
           </div>
         ) : null}
-        {data?.items.length === 0 ? <p className="text-sm text-shared-muted">Записей пока нет.</p> : null}
+        {data?.total === 0 ? <p className="text-sm text-shared-muted">Записей пока нет.</p> : null}
         {data && data.pages > 1 ? (
           <nav className="mt-5 flex items-center justify-between gap-2 text-center text-sm text-shared-muted" aria-label="Страницы списка">
             <button type="button" className={pageButton} disabled={page <= 1 || items.isPlaceholderData}

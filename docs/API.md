@@ -29,10 +29,12 @@
 | GET | `/api/items/{id}` | Один объект владельца |
 | POST | `/api/items/text` | Созданная заметка, 201 |
 | POST | `/api/items/file` | Созданный файл, 201 |
+| PATCH | `/api/items/{id}` | Изменённая заметка, 200 |
+| DELETE | `/api/items/{id}` | `{"ok":true}` после удаления заметки |
 | GET | `/api/items/{id}/content` | Встроенное изображение, только JPEG/PNG/WebP |
 | GET | `/api/items/{id}/download` | Исходный файл как attachment |
 
-`POST /api/items/text`: `{"text":"Купить кофе"}`.
+`POST /api/items/text` и `PATCH /api/items/{id}` принимают `{"text":"Купить кофе"}`.
 
 `POST /api/items/file`: `multipart/form-data`, поле `file` обязательно, `caption` необязательно.
 
@@ -60,5 +62,7 @@
 ```json
 {"type":"item.created","item_id":"uuid"}
 ```
+
+После правки или удаления заметки приходят соответственно `item.updated` и `item.deleted` с тем же полем `item_id`.
 
 События не являются источником данных и не гарантируют доставку. Получив событие, клиент должен повторить запрос к `/api/items`. После восстановления WebSocket клиент обязан сделать то же самое.

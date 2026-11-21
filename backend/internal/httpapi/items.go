@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"io"
 	"mime"
 	"net/http"
@@ -90,27 +91,88 @@ func (a *api) getItem(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, 200, item)
 }
-func (a *api) createText(w http.ResponseWriter, r *http.Request) {
+func readNoteText(w http.ResponseWriter, r *http.Request) (string, bool) {
 	var data struct {
 		Text string `json:"text"`
 	}
 	if err := decodeJSON(r, &data); err != nil {
 		fail(w, 400, "Неверный формат данных")
-		return
+		return "", false
 	}
 	data.Text = strings.TrimSpace(data.Text)
 	if data.Text == "" || !utf8.ValidString(data.Text) || utf8.RuneCountInString(data.Text) > 10000 {
 		fail(w, 400, "Введите текст до 10 000 символов")
+		return "", false
+	}
+	return data.Text, true
+}
+
+func (a *api) createText(w http.ResponseWriter, r *http.Request) {
+	text, ok := readNoteText(w, r)
+	if !ok {
 		return
 	}
 	identity := auth.FromContext(r.Context())
-	item := model.Item{ID: uuid.NewString(), UserID: identity.User.ID, Type: "text", Text: data.Text}
+	item := model.Item{ID: uuid.NewString(), UserID: identity.User.ID, Type: "text", Text: text}
 	if err := a.db.WithContext(r.Context()).Create(&item).Error; err != nil {
 		fail(w, 500, "Не удалось сохранить запись")
 		return
 	}
 	a.hub.NotifyCreated(identity.User.ID, item.ID)
 	respond(w, 201, item)
+}
+
+func (a *api) ownedNotes(r *http.Request, item *model.Item) *gorm.DB {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		return nil
+	}
+	return a.db.WithContext(r.Context()).Model(item).
+		Where("id = ? AND user_id = ? AND type = ?", id.String(), auth.FromContext(r.Context()).User.ID, "text")
+}
+
+func (a *api) updateText(w http.ResponseWriter, r *http.Request) {
+	var item model.Item
+	query := a.ownedNotes(r, &item)
+	if query == nil {
+		fail(w, 404, "Заметка не найдена")
+		return
+	}
+	text, ok := readNoteText(w, r)
+	if !ok {
+		return
+	}
+	result := query.Clauses(clause.Returning{}).Update("text", text)
+	if result.Error != nil {
+		fail(w, 500, "Не удалось сохранить заметку")
+		return
+	}
+	if result.RowsAffected == 0 {
+		fail(w, 404, "Заметка не найдена")
+		return
+	}
+	a.hub.NotifyItem(item.UserID, item.ID, "item.updated")
+	respond(w, 200, item)
+}
+
+func (a *api) deleteText(w http.ResponseWriter, r *http.Request) {
+	var item model.Item
+	query := a.ownedNotes(r, &item)
+	if query == nil {
+		fail(w, 404, "Заметка не найдена")
+		return
+	}
+	result := query.Clauses(clause.Returning{}).Delete(&item)
+	if result.Error != nil {
+		fail(w, 500, "Не удалось удалить заметку")
+		return
+	}
+	if result.RowsAffected == 0 {
+		fail(w, 404, "Заметка не найдена")
+		return
+	}
+	a.hub.NotifyItem(item.UserID, item.ID, "item.deleted")
+	respond(w, 200, map[string]bool{"ok": true})
 }
 func (a *api) createFile(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, a.cfg.MaxFileBytes+1024*1024)

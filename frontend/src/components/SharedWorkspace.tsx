@@ -1,9 +1,10 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react'
-import { LogOut } from 'lucide-react'
+import { Grid2X2, List, LogOut } from 'lucide-react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import type { SharedFile, SharedItem } from '../types'
+import type { SharedFile, SharedItem, SharedNote } from '../types'
 import { AppTitle } from './AppTitle'
 import { ImageLightbox } from './ImageLightbox'
+import { NoteEditor } from './NoteEditor'
 import { InstallAppButton } from './PwaControls'
 import { WorkspaceCard } from './WorkspaceCard'
 import { WorkspaceComposer, type SaveDraft } from './WorkspaceComposer'
@@ -14,6 +15,8 @@ type SharedWorkspaceProps = {
   loading: boolean
   saving: boolean
   onSave: (draft: SaveDraft) => Promise<void>
+  onUpdateNote: (id: string, text: string) => Promise<unknown>
+  onDeleteNote: (id: string) => Promise<unknown>
   onLogout: () => void
   loggingOut: boolean
   logoutError?: string
@@ -30,15 +33,34 @@ function subscribeToDesktop(onChange: () => void) {
 }
 
 const headerButton = 'inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-semibold text-shared-muted shadow-[0_4px_16px_rgba(20,22,31,0.05)] transition-colors enabled:hover:text-shared-ink disabled:opacity-60 pointer-coarse:min-h-11'
+const viewPreference = 'shared.entry-view'
 
-export default function SharedWorkspace({ items, online, loading, saving, onSave, onLogout, loggingOut, logoutError, children }: SharedWorkspaceProps) {
+function prefersList() {
+  try {
+    return localStorage.getItem(viewPreference) === 'list'
+  } catch {
+    return false
+  }
+}
+
+export default function SharedWorkspace({ items, online, loading, saving, onSave, onUpdateNote, onDeleteNote, onLogout, loggingOut, logoutError, children }: SharedWorkspaceProps) {
   const [preview, setPreview] = useState<SharedFile | null>(null)
+  const [selectedNote, setSelectedNote] = useState<SharedNote | null>(null)
+  const [listView, setListView] = useState(prefersList)
   const desktop = useSyncExternalStore(subscribeToDesktop, isDesktop)
+
+  function toggleView() {
+    const next = !listView
+    setListView(next)
+    try {
+      localStorage.setItem(viewPreference, next ? 'list' : 'tiles')
+    } catch { /* The current view still works when storage is unavailable. */ }
+  }
 
   function renderCards(column?: 0 | 1) {
     return items.map((item, index) => (
       column === undefined || index % 2 === column
-        ? <WorkspaceCard key={item.id} item={item} index={index} onPreview={setPreview} />
+        ? <WorkspaceCard key={item.id} item={item} index={index} compact={listView} onOpenNote={setSelectedNote} onPreview={setPreview} />
         : null
     ))
   }
@@ -62,10 +84,19 @@ export default function SharedWorkspace({ items, online, loading, saving, onSave
           </p>
         ) : null}
         {logoutError ? <p className="mb-3 text-sm text-shared-error" role="alert">{logoutError}</p> : null}
-        <WorkspaceComposer onSave={onSave} saving={saving} disabled={loggingOut} previewOpen={Boolean(preview)} />
+        <WorkspaceComposer onSave={onSave} saving={saving} disabled={loggingOut} previewOpen={Boolean(preview || selectedNote)} />
 
         <section aria-label="Записи" aria-busy={loading}>
-          {desktop ? (
+          <div className="mb-3 flex items-center justify-between gap-3 px-1">
+            <h2 className="text-sm font-extrabold text-shared-ink">Записи</h2>
+            <button type="button" onClick={toggleView}
+              aria-label={listView ? 'Показать плитки' : 'Показать список'}
+              className={headerButton + ' hover:bg-[#F0EDFA]'}>
+              {listView ? <Grid2X2 className="size-4" /> : <List className="size-4" />}
+              {listView ? 'Плитки' : 'Список'}
+            </button>
+          </div>
+          {desktop && !listView ? (
             <div className="grid grid-cols-2 items-start gap-4">
               <motion.div layout className="flex min-w-0 flex-col gap-4">
                 {renderCards(0)}
@@ -75,13 +106,16 @@ export default function SharedWorkspace({ items, online, loading, saving, onSave
               </motion.div>
             </div>
           ) : (
-            <motion.div layout className="flex flex-col gap-4">
+            <motion.div layout className={'flex min-w-0 flex-col ' + (listView ? 'gap-2' : 'gap-4')}>
               {renderCards()}
             </motion.div>
           )}
           {children}
         </section>
       </main>
+      {selectedNote ? (
+        <NoteEditor key={selectedNote.id} note={selectedNote} onSave={onUpdateNote} onDelete={onDeleteNote} onClose={() => setSelectedNote(null)} />
+      ) : null}
       <AnimatePresence>
         {preview?.imageUrl ? (
           <ImageLightbox key={preview.id} item={preview} imageUrl={preview.imageUrl} onClose={() => setPreview(null)} />

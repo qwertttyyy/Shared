@@ -1,5 +1,5 @@
-import { memo, useEffect, useId, useState, type ReactNode } from 'react'
-import { ArrowDownToLine, ArrowUpRight, Check, Copy, Maximize2 } from 'lucide-react'
+import { memo, useEffect, useState, type ReactNode } from 'react'
+import { ArrowDownToLine, ArrowUpRight, Check, Copy, FileText, Maximize2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { analyzeNote, formatDateCompact, formatFileSize, type SharedFile, type SharedItem, type SharedNote } from '../types'
 
@@ -15,19 +15,20 @@ const cardMotion = {
 }
 const roundAction = 'grid size-9 shrink-0 place-items-center rounded-full transition-colors pointer-coarse:size-11'
 const liftCard = 'transition-transform motion-safe:hover:-translate-y-0.5'
+const listCard = 'flex min-w-0 items-center gap-2 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-shared-ink/5 sm:gap-3 sm:px-4'
 
 function CardDate({ value, className }: { value: string; className: string }) {
   return <time dateTime={value} className={'font-mono text-[11px] ' + className}>{formatDateCompact(value)}</time>
 }
 
-function NoteCard({ item, index }: { item: SharedNote; index: number }) {
+function NoteCard({ item, index, compact, onOpen }: {
+  item: SharedNote; index: number; compact: boolean; onOpen: (item: SharedNote) => void
+}) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
-  const [expanded, setExpanded] = useState(false)
-  const textId = useId()
   const info = analyzeNote(item.text)
   const compactNote = Array.from(item.text.split('\n', 5).slice(0, 4).join('\n')).slice(0, 280).join('')
   const truncated = compactNote.length < item.text.length
-  const text = truncated && !expanded ? compactNote + '…' : item.text
+  const text = truncated ? compactNote + '…' : item.text
   const palette = palettes[index % palettes.length]
 
   useEffect(() => {
@@ -51,34 +52,51 @@ function NoteCard({ item, index }: { item: SharedNote; index: number }) {
       {copyState === 'copied' ? <Check className="size-4" /> : <Copy className="size-4" />}
     </button>
   )
-  const expandButton = truncated ? (
-    <button type="button" aria-controls={textId} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}
-      className="min-h-9 rounded-sm text-sm font-semibold underline underline-offset-3">
-      {expanded ? 'Свернуть' : 'Читать полностью'}
-    </button>
+  const linkAction = info.shape === 'link' ? (
+    <a href={info.url} target="_blank" rel="noopener noreferrer" aria-label="Открыть ссылку"
+      className={roundAction + (compact ? ' text-indigo-700 hover:bg-indigo-50' : ' bg-white/80 text-[#0A3F2B] hover:bg-[#0A3F2B] hover:text-white')}>
+      <ArrowUpRight className="size-4" />
+    </a>
   ) : null
+  const noteActions = (action: string) => (
+    <div className="flex shrink-0 items-center gap-1">
+      {linkAction}
+      <button type="button" aria-label="Открыть заметку" title="Открыть заметку" onClick={() => onOpen(item)}
+        className={roundAction + ' hover:bg-black/10'}>
+        <Maximize2 className="size-3.5" />
+      </button>
+      {copyButton(action)}
+    </div>
+  )
+  const copyFeedback = <>
+    <span className="sr-only" role="status">{copyState === 'copied' ? 'Заметка скопирована' : ''}</span>
+    {copyState === 'error' ? <p className="text-sm text-shared-error" role="alert">Не удалось скопировать текст.</p> : null}
+  </>
 
   let decoration: string
   let content: ReactNode
-  if (info.shape === 'link') {
+  if (compact) {
+    decoration = listCard
+    content = <>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm leading-snug font-bold whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</p>
+        <CardDate value={item.createdAt} className="mt-1 block text-shared-muted" />
+        {copyFeedback}
+      </div>
+      {noteActions('bg-[#F1F3FA] text-shared-ink')}
+    </>
+  } else if (info.shape === 'link') {
     decoration = 'bg-[#DAF6E8] p-6 text-[#0A3F2B]'
     content = <>
       <span className="inline-block max-w-full rounded-full bg-white/70 px-3 py-1 font-mono text-[11.5px] font-bold [overflow-wrap:anywhere]">
         {info.domain}
       </span>
-      <p id={textId} className="my-5 text-[18px] leading-snug font-extrabold [overflow-wrap:anywhere]">
-        {!expanded && truncated ? text : info.path || info.url}
+      <p className="my-5 text-[18px] leading-snug font-extrabold [overflow-wrap:anywhere]">
+        {truncated ? text : info.path || info.url}
       </p>
-      {expandButton}
       <div className="flex items-center justify-between gap-2">
         <CardDate value={item.createdAt} className="text-[#276E53]" />
-        <div className="flex items-center gap-1.5">
-          <a href={info.url} target="_blank" rel="noopener noreferrer" aria-label="Открыть ссылку"
-            className={roundAction + ' bg-white/80 text-[#0A3F2B] hover:bg-[#0A3F2B] hover:text-white'}>
-            <ArrowUpRight className="size-4" />
-          </a>
-          {copyButton('bg-[#0A3F2B] text-white group-hover:bg-[#155740]')}
-        </div>
+        {noteActions('bg-[#0A3F2B] text-white group-hover:bg-[#155740]')}
       </div>
     </>
   } else if (info.shape === 'color') {
@@ -90,51 +108,76 @@ function NoteCard({ item, index }: { item: SharedNote; index: number }) {
           <p className="text-[15.5px] font-bold [overflow-wrap:anywhere]">{item.text}</p>
           <CardDate value={item.createdAt} className="mt-0.5 text-shared-muted" />
         </div>
-        {copyButton('bg-[#F1F3FA] text-shared-ink group-hover:bg-shared-ink group-hover:text-white')}
+        {noteActions('bg-[#F1F3FA] text-shared-ink group-hover:bg-shared-ink group-hover:text-white')}
       </div>
     </>
   } else if (info.shape === 'code') {
     decoration = 'bg-[#102128] p-6 text-[#A7F3D0]'
     content = <>
-      <pre id={textId} className="thin-scrollbar my-2 overflow-x-auto pr-6 font-mono text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</pre>
-      {expandButton}
+      <pre className="thin-scrollbar my-2 overflow-x-auto pr-6 font-mono text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</pre>
       <div className="mt-5 flex items-center justify-between gap-2">
         <CardDate value={item.createdAt} className="text-[#83C7AF]" />
-        {copyButton('bg-white/10 text-white group-hover:bg-white/20')}
+        {noteActions('bg-white/10 text-white group-hover:bg-white/20')}
       </div>
     </>
   } else {
     decoration = 'px-6 pt-[52px] pb-6 ' + palette.bg
     content = <>
-      <p id={textId} className={'my-2 tracking-[-0.02em] whitespace-pre-wrap [overflow-wrap:anywhere] ' + (
+      <p className={'my-2 tracking-[-0.02em] whitespace-pre-wrap [overflow-wrap:anywhere] ' + (
         info.shape === 'short' ? 'text-[22px] leading-[1.22] font-extrabold' : 'text-[16px] leading-relaxed font-semibold'
       )}>{text}</p>
-      {expandButton}
       <div className="mt-5 flex items-center justify-between gap-2">
         <CardDate value={item.createdAt} className={palette.muted} />
-        {copyButton(palette.action)}
+        {noteActions(palette.action)}
       </div>
     </>
   }
 
   return (
-    <motion.article layout {...cardMotion} className={'group cursor-pointer rounded-[30px] ' + liftCard + ' ' + decoration}
+    <motion.article layout="position" {...cardMotion}
+      className={'group min-w-0 cursor-pointer ' + (compact ? '' : 'rounded-[30px] ' + liftCard + ' ') + decoration}
       onClick={event => {
         if (event.target instanceof Element && event.target.closest('button, a')) return
         if (window.getSelection()?.toString()) return
         void copy()
       }}>
       {content}
-      <span className="sr-only" role="status">{copyState === 'copied' ? 'Заметка скопирована' : ''}</span>
-      {copyState === 'error' ? <p className="mt-2 text-sm" role="alert">Не удалось скопировать текст.</p> : null}
+      {compact ? null : copyFeedback}
     </motion.article>
   )
 }
 
-function FileCard({ item, onPreview }: { item: SharedFile; onPreview: (item: SharedFile) => void }) {
+function FileCard({ item, compact, onPreview }: { item: SharedFile; compact: boolean; onPreview: (item: SharedFile) => void }) {
   const [failedImageUrl, setFailedImageUrl] = useState<string>()
   const size = formatFileSize(item.fileSize)
   const downloadLabel = 'Скачать ' + item.fileName
+
+  if (compact) {
+    const preview = item.imageUrl && failedImageUrl !== item.imageUrl
+    return (
+      <motion.article layout="position" {...cardMotion} className={listCard}>
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#EAF0FF] text-[#234589]">
+          <FileText className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold" title={item.fileName}>{item.fileName}</p>
+          {item.caption ? <p className="truncate text-xs text-shared-muted">{item.caption}</p> : null}
+          <p className="mt-1 flex flex-wrap gap-x-3 font-mono text-[11px] text-shared-muted">
+            {size ? <span>{size}</span> : null}
+            <time dateTime={item.createdAt}>{formatDateCompact(item.createdAt)}</time>
+          </p>
+        </div>
+        {preview ? (
+          <button type="button" aria-label={'Открыть ' + item.fileName} onClick={() => onPreview(item)} className={roundAction + ' hover:bg-indigo-50'}>
+            <Maximize2 className="size-3.5" />
+          </button>
+        ) : null}
+        <a href={item.downloadUrl} download={item.fileName} aria-label={downloadLabel} className={roundAction + ' bg-[#EAF0FF] text-[#234589] hover:bg-indigo-100'}>
+          <ArrowDownToLine className="size-4" />
+        </a>
+      </motion.article>
+    )
+  }
 
   if (item.fileCategory === 'image' && item.imageUrl && failedImageUrl !== item.imageUrl) {
     return (
@@ -190,10 +233,12 @@ function FileCard({ item, onPreview }: { item: SharedFile; onPreview: (item: Sha
   )
 }
 
-export const WorkspaceCard = memo(function WorkspaceCard({ item, index, onPreview }: {
+export const WorkspaceCard = memo(function WorkspaceCard({ item, index, compact, onOpenNote, onPreview }: {
   item: SharedItem
   index: number
+  compact: boolean
+  onOpenNote: (item: SharedNote) => void
   onPreview: (item: SharedFile) => void
 }) {
-  return item.kind === 'note' ? <NoteCard item={item} index={index} /> : <FileCard item={item} onPreview={onPreview} />
+  return item.kind === 'note' ? <NoteCard item={item} index={index} compact={compact} onOpen={onOpenNote} /> : <FileCard item={item} compact={compact} onPreview={onPreview} />
 })
