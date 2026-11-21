@@ -174,6 +174,47 @@ func (a *api) deleteText(w http.ResponseWriter, r *http.Request) {
 	a.hub.NotifyItem(item.UserID, item.ID, "item.deleted")
 	respond(w, 200, map[string]bool{"ok": true})
 }
+
+func (a *api) deleteItems(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		IDs []string `json:"ids"`
+	}
+	if err := decodeJSON(r, &data); err != nil || len(data.IDs) == 0 {
+		fail(w, 400, "Выберите записи для удаления")
+		return
+	}
+	for index, raw := range data.IDs {
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			fail(w, 400, "Неверный идентификатор записи")
+			return
+		}
+		data.IDs[index] = id.String()
+	}
+
+	userID := auth.FromContext(r.Context()).User.ID
+	var deleted []string
+	// Record file cleanup in the same statement that deletes the entries.
+	err := a.db.WithContext(r.Context()).Raw(`
+		WITH removed AS (
+			DELETE FROM items WHERE user_id = ? AND id = ANY(CAST(? AS uuid[]))
+			RETURNING id, storage_key
+		), scheduled AS (
+			INSERT INTO file_deletions (storage_key)
+			SELECT storage_key FROM removed WHERE storage_key <> ''
+			ON CONFLICT (storage_key) DO NOTHING
+		)
+		SELECT id FROM removed`, userID, "{"+strings.Join(data.IDs, ",")+"}").Scan(&deleted).Error
+	if err != nil {
+		fail(w, 500, "Не удалось удалить выбранные записи")
+		return
+	}
+	for _, id := range deleted {
+		a.hub.NotifyItem(userID, id, "item.deleted")
+	}
+	respond(w, 200, map[string]int{"deleted": len(deleted)})
+}
+
 func (a *api) createFile(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, a.cfg.MaxFileBytes+1024*1024)
 	if err := r.ParseMultipartForm(4 << 20); err != nil {

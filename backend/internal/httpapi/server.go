@@ -44,6 +44,7 @@ func NewRouter(db *gorm.DB, files *storage.Local, hub *realtime.Hub, cfg config.
 		r.Get("/api/items/{id}", a.getItem)
 		r.With(a.requireCSRF).Post("/api/items/text", a.createText)
 		r.With(a.requireCSRF).Post("/api/items/file", a.createFile)
+		r.With(a.requireCSRF).Post("/api/items/batch-delete", a.deleteItems)
 		r.With(a.requireCSRF).Patch("/api/items/{id}", a.updateText)
 		r.With(a.requireCSRF).Delete("/api/items/{id}", a.deleteText)
 		r.Get("/api/items/{id}/download", a.downloadFile)

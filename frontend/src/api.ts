@@ -74,6 +74,9 @@ export const api = {
   deleteNote(id: string) {
     return request<{ ok: boolean }>('/items/' + encodeURIComponent(id), { method: 'DELETE' })
   },
+  deleteItems(ids: string[]) {
+    return request<{ deleted: number }>('/items/batch-delete', { method: 'POST', body: JSON.stringify({ ids }) })
+  },
   upload(file: File, caption: string) {
     const body = new FormData()
     body.append('file', file)

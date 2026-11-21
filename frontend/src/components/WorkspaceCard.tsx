@@ -16,13 +16,14 @@ const cardMotion = {
 const roundAction = 'grid size-9 shrink-0 place-items-center rounded-full transition-colors pointer-coarse:size-11'
 const liftCard = 'transition-transform motion-safe:hover:-translate-y-0.5'
 const listCard = 'flex min-w-0 items-center gap-2 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-shared-ink/5 sm:gap-3 sm:px-4'
+const listSelectionPadding = ' pr-14 sm:pr-14'
 
 function CardDate({ value, className }: { value: string; className: string }) {
   return <time dateTime={value} className={'font-mono text-[11px] ' + className}>{formatDateCompact(value)}</time>
 }
 
-function NoteCard({ item, index, compact, onOpen }: {
-  item: SharedNote; index: number; compact: boolean; onOpen: (item: SharedNote) => void
+function NoteCard({ item, index, compact, onOpen, selection }: {
+  item: SharedNote; index: number; compact: boolean; onOpen: (item: SharedNote) => void; selection?: ReactNode
 }) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const info = analyzeNote(item.text)
@@ -59,7 +60,7 @@ function NoteCard({ item, index, compact, onOpen }: {
     </a>
   ) : null
   const noteActions = (action: string) => (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className={'flex shrink-0 items-center gap-1 ' + (selection ? 'invisible' : '')}>
       {linkAction}
       <button type="button" aria-label="Открыть заметку" title="Открыть заметку" onClick={() => onOpen(item)}
         className={roundAction + ' hover:bg-black/10'}>
@@ -76,19 +77,19 @@ function NoteCard({ item, index, compact, onOpen }: {
   let decoration: string
   let content: ReactNode
   if (compact) {
-    decoration = listCard
+    decoration = listCard + (selection ? listSelectionPadding : '')
     content = <>
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-sm leading-snug font-bold whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</p>
         <CardDate value={item.createdAt} className="mt-1 block text-shared-muted" />
         {copyFeedback}
       </div>
-      {noteActions('bg-[#F1F3FA] text-shared-ink')}
+      {selection ? null : noteActions('bg-[#F1F3FA] text-shared-ink')}
     </>
   } else if (info.shape === 'link') {
     decoration = 'bg-[#DAF6E8] p-6 text-[#0A3F2B]'
     content = <>
-      <span className="inline-block max-w-full rounded-full bg-white/70 px-3 py-1 font-mono text-[11.5px] font-bold [overflow-wrap:anywhere]">
+      <span className={'inline-block rounded-full bg-white/70 px-3 py-1 font-mono text-[11.5px] font-bold [overflow-wrap:anywhere] ' + (selection ? 'max-w-[calc(100%-2rem)]' : 'max-w-full')}>
         {info.domain}
       </span>
       <p className="my-5 text-[18px] leading-snug font-extrabold [overflow-wrap:anywhere]">
@@ -114,7 +115,7 @@ function NoteCard({ item, index, compact, onOpen }: {
   } else if (info.shape === 'code') {
     decoration = 'bg-[#102128] p-6 text-[#A7F3D0]'
     content = <>
-      <pre className="thin-scrollbar my-2 overflow-x-auto pr-6 font-mono text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</pre>
+      <pre className={'thin-scrollbar my-2 overflow-x-auto font-mono text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] ' + (selection ? 'pr-10' : 'pr-6')}>{text}</pre>
       <div className="mt-5 flex items-center justify-between gap-2">
         <CardDate value={item.createdAt} className="text-[#83C7AF]" />
         {noteActions('bg-white/10 text-white group-hover:bg-white/20')}
@@ -135,27 +136,32 @@ function NoteCard({ item, index, compact, onOpen }: {
 
   return (
     <motion.article layout="position" {...cardMotion}
-      className={'group min-w-0 cursor-pointer ' + (compact ? '' : 'rounded-[30px] ' + liftCard + ' ') + decoration}
+      className={'group relative min-w-0 cursor-pointer ' + (compact ? '' : 'rounded-[30px] ' + liftCard + ' ') + decoration}
       onClick={event => {
+        if (selection) return
         if (event.target instanceof Element && event.target.closest('button, a')) return
         if (window.getSelection()?.toString()) return
         void copy()
       }}>
       {content}
       {compact ? null : copyFeedback}
+      {selection}
     </motion.article>
   )
 }
 
-function FileCard({ item, compact, onPreview }: { item: SharedFile; compact: boolean; onPreview: (item: SharedFile) => void }) {
+function FileCard({ item, compact, onPreview, selection }: {
+  item: SharedFile; compact: boolean; onPreview: (item: SharedFile) => void; selection?: ReactNode
+}) {
   const [failedImageUrl, setFailedImageUrl] = useState<string>()
   const size = formatFileSize(item.fileSize)
   const downloadLabel = 'Скачать ' + item.fileName
+  const hideAction = selection ? ' invisible' : ''
 
   if (compact) {
     const preview = item.imageUrl && failedImageUrl !== item.imageUrl
     return (
-      <motion.article layout="position" {...cardMotion} className={listCard}>
+      <motion.article layout="position" {...cardMotion} className={'relative ' + listCard + (selection ? listSelectionPadding : '')}>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#EAF0FF] text-[#234589]">
           <FileText className="size-4" aria-hidden="true" />
         </span>
@@ -167,33 +173,37 @@ function FileCard({ item, compact, onPreview }: { item: SharedFile; compact: boo
             <time dateTime={item.createdAt}>{formatDateCompact(item.createdAt)}</time>
           </p>
         </div>
-        {preview ? (
+        {preview && !selection ? (
           <button type="button" aria-label={'Открыть ' + item.fileName} onClick={() => onPreview(item)} className={roundAction + ' hover:bg-indigo-50'}>
             <Maximize2 className="size-3.5" />
           </button>
         ) : null}
-        <a href={item.downloadUrl} download={item.fileName} aria-label={downloadLabel} className={roundAction + ' bg-[#EAF0FF] text-[#234589] hover:bg-indigo-100'}>
-          <ArrowDownToLine className="size-4" />
-        </a>
+        {!selection ? (
+          <a href={item.downloadUrl} download={item.fileName} aria-label={downloadLabel} className={roundAction + ' bg-[#EAF0FF] text-[#234589] hover:bg-indigo-100'}>
+            <ArrowDownToLine className="size-4" />
+          </a>
+        ) : null}
+        {selection}
       </motion.article>
     )
   }
 
   if (item.fileCategory === 'image' && item.imageUrl && failedImageUrl !== item.imageUrl) {
     return (
-      <motion.article layout {...cardMotion} className="group overflow-hidden rounded-[30px] bg-shared-ink">
+      <motion.article layout {...cardMotion} className="group relative overflow-hidden rounded-[30px] bg-shared-ink">
         <div className="relative">
           <button type="button" aria-label={'Открыть ' + item.fileName} onClick={() => onPreview(item)}
+            inert={Boolean(selection)} aria-hidden={selection ? true : undefined}
             className="block h-60 w-full cursor-zoom-in! overflow-hidden focus-visible:-outline-offset-4">
             <img src={item.imageUrl} alt="" loading="lazy" decoding="async" onError={() => setFailedImageUrl(item.imageUrl)}
-              className="size-full object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105" />
+              className={'size-full object-cover ' + (selection ? '' : 'motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105')} />
           </button>
           <div className="glass-image-controls absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 rounded-[22px] bg-white/90 p-2.5 pl-4 backdrop-blur-xl">
             <div className="min-w-0">
               <p title={item.fileName} className="truncate text-[14px] font-bold">{item.fileName}</p>
               {size ? <p className="font-mono text-[11px] text-[#646A80]">{size}</p> : null}
             </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className={'flex shrink-0 items-center gap-1.5' + hideAction}>
               <button type="button" onClick={() => onPreview(item)} aria-label={'Развернуть ' + item.fileName}
                 className={roundAction + ' bg-[#EEF1F8] text-shared-ink hover:bg-[#DCE2F2]'}>
                 <Maximize2 className="size-3.5" />
@@ -206,14 +216,16 @@ function FileCard({ item, compact, onPreview }: { item: SharedFile; compact: boo
           </div>
         </div>
         {item.caption ? <p className="bg-white px-5 py-3 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">{item.caption}</p> : null}
+        {selection}
       </motion.article>
     )
   }
 
+  const FileContent = selection ? 'div' : 'a'
+  const download = selection ? {} : { href: item.downloadUrl, download: item.fileName, 'aria-label': downloadLabel }
   return (
     <motion.article layout {...cardMotion} className={'group relative rounded-[30px] bg-[#DCE8FF] text-[#123278] ' + liftCard}>
-      <a href={item.downloadUrl} download={item.fileName} aria-label={downloadLabel}
-        className="relative block overflow-hidden rounded-[inherit] p-6">
+      <FileContent {...download} className="relative block overflow-hidden rounded-[inherit] p-6">
         <span aria-hidden="true" className="pointer-events-none absolute -right-3 -bottom-5 font-display text-[68px] leading-none font-bold tracking-tighter text-[#123278]/8 uppercase select-none">
           {item.fileExt}
         </span>
@@ -224,21 +236,37 @@ function FileCard({ item, compact, onPreview }: { item: SharedFile; compact: boo
         {item.caption ? <p className="relative -mt-3 mb-4 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">{item.caption}</p> : null}
         <div className="relative flex items-center justify-between gap-2">
           <CardDate value={item.createdAt} className="text-[#3E5FA8]" />
-          <span className={roundAction + ' size-10 bg-[#102A66] text-white group-hover:bg-indigo-600'}>
+          <span className={roundAction + ' size-10 bg-[#102A66] text-white group-hover:bg-indigo-600' + hideAction}>
             <ArrowDownToLine className="size-4" />
           </span>
         </div>
-      </a>
+      </FileContent>
+      {selection}
     </motion.article>
   )
 }
 
-export const WorkspaceCard = memo(function WorkspaceCard({ item, index, compact, onOpenNote, onPreview }: {
+export const WorkspaceCard = memo(function WorkspaceCard({ item, index, compact, onOpenNote, onPreview, selected, onToggleSelection }: {
   item: SharedItem
   index: number
   compact: boolean
   onOpenNote: (item: SharedNote) => void
   onPreview: (item: SharedFile) => void
+  selected: boolean
+  onToggleSelection?: (item: SharedItem) => void
 }) {
-  return item.kind === 'note' ? <NoteCard item={item} index={index} compact={compact} onOpen={onOpenNote} /> : <FileCard item={item} compact={compact} onPreview={onPreview} />
+  const selection = onToggleSelection ? (
+    <label className={'absolute inset-0 z-10 cursor-pointer rounded-[inherit] ' + (selected ? 'ring-2 ring-[oklch(0.88_0_0)] ring-inset' : '')}>
+      <input type="checkbox" checked={selected} onChange={() => onToggleSelection(item)} className="peer sr-only"
+        aria-label={item.kind === 'file' ? item.fileName : 'Заметка «' + item.text.trim().slice(0, 80) + '»'} />
+      <span aria-hidden="true" className={'absolute grid size-7 place-items-center rounded-full border shadow-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-700 '
+        + (compact ? 'top-1/2 right-4 -translate-y-1/2 ' : 'top-4 right-4 ')
+        + (selected ? 'border-shared-ink bg-[#DED8F7] text-shared-ink' : 'border-[#797487] bg-white')}>
+        {selected ? <Check className="size-4" strokeWidth={2.5} /> : null}
+      </span>
+    </label>
+  ) : null
+  return item.kind === 'note'
+    ? <NoteCard item={item} index={index} compact={compact} onOpen={onOpenNote} selection={selection} />
+    : <FileCard item={item} compact={compact} onPreview={onPreview} selection={selection} />
 })

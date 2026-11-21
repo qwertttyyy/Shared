@@ -27,7 +27,7 @@
     outline-offset: 3px;
   }
 
-  body:has(.image-lightbox[open], .note-editor[open]) { overflow: hidden; }
+  body:has(.image-lightbox[open], .note-editor[open], .delete-selection[open]) { overflow: hidden; }
 }
 
 .thin-scrollbar {
@@ -48,7 +48,7 @@
 }
 
 .image-lightbox::backdrop { background: transparent; }
-.note-editor::backdrop { background: rgb(20 22 31 / 36%); }
+.note-editor::backdrop, .delete-selection::backdrop { background: rgb(20 22 31 / 36%); }
 
 @media (prefers-reduced-transparency: reduce) {
   .glass-image-controls { background: white; }

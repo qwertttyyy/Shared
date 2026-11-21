@@ -53,7 +53,15 @@ func run() error {
 	router := httpapi.NewRouter(db, files, hub, cfg)
 	server := &http.Server{Addr: ":" + cfg.Port, Handler: router, ReadHeaderTimeout: 10 * time.Second, IdleTimeout: 75 * time.Second}
 	stopCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	cleanupDone := make(chan struct{})
+	go func() {
+		defer close(cleanupDone)
+		files.RunDeletionQueue(stopCtx, db)
+	}()
+	defer func() {
+		stop()
+		<-cleanupDone
+	}()
 	go func() {
 		<-stopCtx.Done()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

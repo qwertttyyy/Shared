@@ -137,12 +137,17 @@ export function Dashboard({ userId, online, onLogout, loggingOut, logoutError }:
     refreshItems()
   }
 
+  async function deleteItems(ids: string[]) {
+    await api.deleteItems(ids)
+    await queryClient.invalidateQueries({ queryKey: ['items', userId] })
+  }
+
   return (
     <Suspense fallback={
       <main className="grid min-h-dvh place-items-center"><p role="status">Загрузка…</p></main>
     }>
       <SharedWorkspace items={data?.items ?? []} online={online} loading={items.isFetching} saving={save.isPending}
-        onSave={save.mutateAsync} onUpdateNote={updateNote} onDeleteNote={deleteNote}
+        onSave={save.mutateAsync} onUpdateNote={updateNote} onDeleteNote={deleteNote} onDeleteItems={deleteItems}
         onLogout={onLogout} loggingOut={loggingOut} logoutError={logoutError}>
         {items.isPending && online ? <p className="text-sm text-shared-muted" role="status">Загрузка…</p> : null}
         {items.isError && online ? (
