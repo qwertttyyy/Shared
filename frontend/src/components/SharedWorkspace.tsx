@@ -1,13 +1,13 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react'
 import { Grid2X2, List, LogOut } from 'lucide-react'
-import { AnimatePresence, MotionConfig, motion } from 'motion/react'
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react'
 import type { SharedFile, SharedItem, SharedNote } from '../types'
 import { AppTitle } from './AppTitle'
 import { ImageLightbox } from './ImageLightbox'
 import { NoteEditor } from './NoteEditor'
 import { InstallAppButton } from './PwaControls'
 import { WorkspaceCard } from './WorkspaceCard'
-import { WorkspaceComposer, type SaveDraft } from './WorkspaceComposer'
+import { WorkspaceComposer, composerLayoutTransition, type SaveDraft } from './WorkspaceComposer'
 
 type SharedWorkspaceProps = {
   items: SharedItem[]
@@ -84,34 +84,36 @@ export default function SharedWorkspace({ items, online, loading, saving, onSave
           </p>
         ) : null}
         {logoutError ? <p className="mb-3 text-sm text-shared-error" role="alert">{logoutError}</p> : null}
-        <WorkspaceComposer onSave={onSave} saving={saving} disabled={loggingOut} previewOpen={Boolean(preview || selectedNote)} />
+        <LayoutGroup>
+          <WorkspaceComposer onSave={onSave} saving={saving} disabled={loggingOut} previewOpen={Boolean(preview || selectedNote)} />
 
-        <section aria-label="Записи" aria-busy={loading}>
-          <div className="mb-3 flex items-center justify-between gap-3 px-1">
-            <h2 className="text-sm font-extrabold text-shared-ink">Записи</h2>
-            <button type="button" onClick={toggleView}
-              aria-label={listView ? 'Показать плитки' : 'Показать список'}
-              className={headerButton + ' hover:bg-[#F0EDFA]'}>
-              {listView ? <Grid2X2 className="size-4" /> : <List className="size-4" />}
-              {listView ? 'Плитки' : 'Список'}
-            </button>
-          </div>
-          {desktop && !listView ? (
-            <div className="grid grid-cols-2 items-start gap-4">
-              <motion.div layout className="flex min-w-0 flex-col gap-4">
-                {renderCards(0)}
-              </motion.div>
-              <motion.div layout className="flex min-w-0 flex-col gap-4 pt-7">
-                {renderCards(1)}
-              </motion.div>
+          <motion.section layout="position" transition={composerLayoutTransition} aria-label="Записи" aria-busy={loading}>
+            <div className="mb-3 flex items-center justify-between gap-3 px-1">
+              <h2 className="text-sm font-extrabold text-shared-ink">Записи</h2>
+              <button type="button" onClick={toggleView}
+                aria-label={listView ? 'Показать плитки' : 'Показать список'}
+                className={headerButton + ' hover:bg-[#F0EDFA]'}>
+                {listView ? <Grid2X2 className="size-4" /> : <List className="size-4" />}
+                {listView ? 'Плитки' : 'Список'}
+              </button>
             </div>
-          ) : (
-            <motion.div layout className={'flex min-w-0 flex-col ' + (listView ? 'gap-2' : 'gap-4')}>
-              {renderCards()}
-            </motion.div>
-          )}
-          {children}
-        </section>
+            {desktop && !listView ? (
+              <div className="grid grid-cols-2 items-start gap-4">
+                <motion.div layout className="flex min-w-0 flex-col gap-4">
+                  {renderCards(0)}
+                </motion.div>
+                <motion.div layout className="flex min-w-0 flex-col gap-4 pt-7">
+                  {renderCards(1)}
+                </motion.div>
+              </div>
+            ) : (
+              <motion.div layout="position" className={'flex min-w-0 flex-col ' + (listView ? 'gap-2' : 'gap-4')}>
+                {renderCards()}
+              </motion.div>
+            )}
+            {children}
+          </motion.section>
+        </LayoutGroup>
       </main>
       {selectedNote ? (
         <NoteEditor key={selectedNote.id} note={selectedNote} onSave={onUpdateNote} onDelete={onDeleteNote} onClose={() => setSelectedNote(null)} />

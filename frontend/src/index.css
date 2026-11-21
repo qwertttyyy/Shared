@@ -35,6 +35,18 @@
   scrollbar-color: rgb(128 128 128 / 24%) transparent;
 }
 
+.workspace-composer-panel {
+  transition: opacity 140ms ease-out 45ms, visibility 0s;
+}
+
+.workspace-composer-panel[inert] {
+  position: absolute;
+  inset: 0 0 auto;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 90ms ease-out, visibility 0s 90ms;
+}
+
 .image-lightbox::backdrop { background: transparent; }
 .note-editor::backdrop { background: rgb(20 22 31 / 36%); }
 

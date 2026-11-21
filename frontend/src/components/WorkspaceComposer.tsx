@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { Paperclip, Plus, X } from 'lucide-react'
+import { Clipboard, Paperclip, Plus, X } from 'lucide-react'
 import { motion } from 'motion/react'
 
 type Attachment = { id: number; file: File }
@@ -20,6 +20,30 @@ type WorkspaceComposerProps = {
 const fileLimit = 25 * 1024 * 1024
 const noteLimit = 10000
 const captionLimit = 500
+const clipboardLabel = 'Вставить из буфера обмена'
+
+export const composerLayoutTransition = {
+  layout: { type: 'spring', stiffness: 360, damping: 38 },
+} as const
+
+async function readClipboard() {
+  const clipboard = navigator.clipboard
+  if (!clipboard?.read && !clipboard?.readText) throw new Error('Clipboard unavailable')
+  if (!clipboard.read) return { text: await clipboard.readText(), files: [] }
+  const items = await clipboard.read()
+  const files: File[] = []
+  const text: string[] = []
+  for (const item of items) {
+    const imageType = item.types.find(type => type === 'image/png' || type === 'image/jpeg' || type === 'image/webp')
+    if (imageType) {
+      const blob = await item.getType(imageType)
+      files.push(new File([blob], 'Из буфера.' + imageType.split('/')[1], { type: imageType }))
+    } else if (item.types.includes('text/plain')) {
+      text.push(await (await item.getType('text/plain')).text())
+    }
+  }
+  return { text: text.join('\n'), files }
+}
 
 export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: WorkspaceComposerProps) {
   const [open, setOpen] = useState(false)
@@ -27,19 +51,22 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
+  const [pasting, setPasting] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
   const noteButton = useRef<HTMLButtonElement>(null)
+  const editor = useRef<HTMLTextAreaElement>(null)
   const attachmentId = useRef(0)
   const restoreFocus = useRef(false)
   const submitting = useRef(false)
   const errorId = useId()
+  const formId = useId()
   const locked = saving || disabled
   const canSave = Boolean(text.trim() || attachments.length)
   const expanded = open || canSave
   const fieldLabel = attachments.length ? 'Подпись к файлу' : 'Заметка'
   const placeholder = attachments.length > 1 ? 'Подпись ко всем файлам' : fieldLabel
 
-  const attachFiles = useCallback((files: FileList) => {
+  const attachFiles = useCallback((files: FileList | File[]) => {
     if (!files.length || locked || submitting.current) return
     const accepted: Attachment[] = []
     let rejected = ''
@@ -56,6 +83,40 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
     setError(rejected)
     if (accepted.length) setAttachments(current => [...current, ...accepted])
   }, [locked])
+
+  async function pasteFromClipboard() {
+    if (locked || pasting || submitting.current) return
+    setPasting(true)
+    setError('')
+    try {
+      const { text: pasted, files } = await readClipboard()
+      if (pasted.trim()) setText(current => current ? current + '\n' + pasted : pasted)
+      if (files.length) attachFiles(files)
+      if (!pasted.trim() && !files.length) setError('В буфере нет текста или изображения.')
+    } catch {
+      setError('Вставьте содержимое через меню поля или сочетанием Ctrl+V / ⌘V.')
+    } finally {
+      setOpen(true)
+      if (expanded) editor.current?.focus({ preventScroll: true })
+      setPasting(false)
+    }
+  }
+
+  const pasteButton = (
+    <button type="button" disabled={locked || pasting} onClick={() => void pasteFromClipboard()}
+      aria-label={clipboardLabel} title={clipboardLabel} aria-busy={pasting}
+      className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F0EDFA] text-[#413477] transition-colors enabled:hover:bg-[#E3DCF6] disabled:opacity-60">
+      <Clipboard className="size-4" aria-hidden="true" />
+    </button>
+  )
+
+  const attachButton = (
+    <button type="button" disabled={locked} onClick={() => fileInput.current?.click()}
+      aria-label="Прикрепить файл" title="Прикрепить файл"
+      className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F1F3FA] text-indigo-600 transition-colors enabled:hover:bg-[#E4E8F5] disabled:opacity-60">
+      <Paperclip className="size-4" aria-hidden="true" />
+    </button>
+  )
 
   useEffect(() => {
     let dragDepth = 0
@@ -111,10 +172,14 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
     }
   }, [attachFiles, locked, previewOpen])
 
-  useEffect(() => {
-    if (!expanded && restoreFocus.current) {
+  useLayoutEffect(() => {
+    const field = editor.current
+    if (expanded && field) {
+      const { top, bottom } = field.getBoundingClientRect()
+      field.focus({ preventScroll: top >= 0 && bottom <= window.innerHeight })
+    } else if (restoreFocus.current) {
       restoreFocus.current = false
-      noteButton.current?.focus()
+      noteButton.current?.focus({ preventScroll: true })
     }
   }, [expanded])
 
@@ -130,7 +195,7 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (locked || submitting.current || !canSave) return
+    if (locked || pasting || submitting.current || !canSave) return
     const draft = text.trim()
     const limit = attachments.length ? captionLimit : noteLimit
     if ([...draft].length > limit) {
@@ -152,7 +217,9 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
   }
 
   return (
-    <motion.section layout className="mb-9 rounded-[30px] bg-white p-2.5 shadow-[0_14px_40px_-14px_rgba(20,22,31,0.09)] ring-1 ring-shared-ink/5 md:p-3"
+    <motion.section layout transition={composerLayoutTransition}
+      style={{ borderRadius: 30, boxShadow: '0 14px 40px -14px rgba(20, 22, 31, 0.09)' }}
+      className="mb-9 overflow-clip bg-white p-2.5 outline-1 outline-shared-ink/5 md:p-3"
       aria-label="Добавить запись">
       <input ref={fileInput} type="file" hidden multiple onChange={event => {
         if (event.target.files) attachFiles(event.target.files)
@@ -168,73 +235,69 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
         document.body,
       ) : null}
 
-      {!expanded ? (
-        <div className="flex items-center gap-2">
-          <button ref={noteButton} type="button" disabled={locked} onClick={() => setOpen(true)}
-            className="flex flex-1 items-center gap-3 rounded-full px-3.5 py-2 text-left text-[15.5px] font-medium text-[#6B7188] transition-colors enabled:hover:text-shared-ink">
-            <span className="grid size-8 place-items-center rounded-full bg-[#F1F3FA] text-shared-ink">
-              <Plus className="size-4" />
-            </span>
-            Заметка
-          </button>
-          <button type="button" disabled={locked} onClick={() => fileInput.current?.click()} aria-label="Прикрепить файл"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#F1F3FA] px-4 text-[13px] font-semibold transition-colors enabled:hover:bg-[#E4E8F5]">
-            <Paperclip className="size-4 text-indigo-600" />
-            <span className="hidden sm:inline">Прикрепить файл</span>
-          </button>
-        </div>
-      ) : (
-        <form className="p-1.5" onSubmit={submit} aria-busy={saving}>
-          <textarea autoFocus value={text} rows={3} maxLength={noteLimit * 2} readOnly={locked}
-            aria-label={placeholder} aria-describedby={error ? errorId : undefined}
-            placeholder={placeholder} onChange={event => {
-              setText(event.target.value)
-              setError('')
-            }} onKeyDown={event => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                event.preventDefault()
-                event.currentTarget.form?.requestSubmit()
-              }
-            }}
-            className="w-full resize-y rounded-xl bg-transparent px-2 py-1 text-[16.5px] leading-relaxed placeholder:text-[#6B7188]" />
-
-          {attachments.length ? (
-            <ul className="mt-1 mb-2 flex flex-wrap gap-2 px-2" aria-label="Прикреплённые файлы">
-              {attachments.map(({ id, file }) => (
-                <li key={id} className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#DCE8FF] pl-3 text-[12.5px] font-semibold text-[#153E90]">
-                  <span className="max-w-[180px] truncate" title={file.name}>{file.name}</span>
-                  <button type="button" disabled={locked} onClick={() => { removeAttachment(id); setError('') }}
-                    aria-label={'Убрать файл ' + file.name} className="grid size-9 shrink-0 place-items-center rounded-full enabled:hover:bg-black/10">
-                    <X className="size-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {error ? <p id={errorId} className="px-2 pt-1 text-sm break-words text-shared-error" role="alert">{error}</p> : null}
-          <div className="mt-2 flex items-center justify-between gap-2 pt-2">
-            <button type="button" disabled={locked} onClick={() => fileInput.current?.click()} aria-label="Прикрепить файл"
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-[#F3F5FB] px-4 text-[13.5px] font-semibold whitespace-nowrap text-[#3C4157] transition-colors enabled:hover:bg-[#E7EBF7]">
-              <Paperclip className="size-4 text-indigo-600" />
-              <span className="sm:hidden">Файл</span>
-              <span className="hidden sm:inline">Прикрепить файл</span>
+      {/* Position-only layout compensates for the surrounding card's scale. */}
+      <motion.div layout="position" transition={composerLayoutTransition} className="relative">
+        <div inert={expanded} className="workspace-composer-panel flex items-center gap-2">
+            <button ref={noteButton} type="button" disabled={locked} onClick={() => setOpen(true)}
+              aria-expanded={expanded} aria-controls={formId}
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-full px-3.5 py-2 text-left text-[15.5px] font-medium text-[#6B7188] transition-colors enabled:hover:text-shared-ink">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#F1F3FA] text-shared-ink">
+                <Plus className="size-4" />
+              </span>
+              Заметка
             </button>
-            <div className="flex items-center gap-2">
-              {!canSave ? (
-                <button type="button" disabled={locked} onClick={closeComposer} aria-label="Свернуть"
-                  className="grid size-11 place-items-center rounded-full text-shared-muted enabled:hover:bg-[#F3F5FB]">
-                  <X className="size-4" />
+            {pasteButton}
+            {attachButton}
+        </div>
+        <form id={formId} inert={!expanded} className="workspace-composer-panel p-1.5" onSubmit={submit} aria-busy={saving}>
+            <textarea ref={editor} value={text} rows={3} maxLength={noteLimit * 2} readOnly={locked}
+              aria-label={placeholder} aria-describedby={error ? errorId : undefined}
+              placeholder={placeholder} onChange={event => {
+                setText(event.target.value)
+                setError('')
+              }} onKeyDown={event => {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                  event.preventDefault()
+                  event.currentTarget.form?.requestSubmit()
+                }
+              }}
+              className="w-full resize-y rounded-xl bg-transparent px-2 py-1 text-[16.5px] leading-relaxed placeholder:text-[#6B7188]" />
+
+            {attachments.length ? (
+              <ul className="mt-1 mb-2 flex flex-wrap gap-2 px-2" aria-label="Прикреплённые файлы">
+                {attachments.map(({ id, file }) => (
+                  <li key={id} className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#DCE8FF] pl-3 text-[12.5px] font-semibold text-[#153E90]">
+                    <span className="max-w-[180px] truncate" title={file.name}>{file.name}</span>
+                    <button type="button" disabled={locked} onClick={() => { removeAttachment(id); setError('') }}
+                      aria-label={'Убрать файл ' + file.name} className="grid size-9 shrink-0 place-items-center rounded-full enabled:hover:bg-black/10">
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {error ? <p id={errorId} className="px-2 pt-1 text-sm break-words text-shared-error" role="alert">{error}</p> : null}
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 pt-2">
+              <div className="flex items-center gap-2">
+                {attachButton}
+                {pasteButton}
+              </div>
+              <div className="flex items-center gap-2">
+                {!canSave ? (
+                  <button type="button" disabled={locked} onClick={closeComposer} aria-label="Свернуть"
+                    className="grid size-11 place-items-center rounded-full text-shared-muted enabled:hover:bg-[#F3F5FB]">
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+                <button type="submit" disabled={!canSave || locked || pasting}
+                  className="min-h-11 rounded-full bg-shared-ink px-4 text-[13.5px] font-bold text-white transition-colors enabled:hover:bg-indigo-600 disabled:bg-[#EEF0F7] disabled:text-shared-muted sm:px-5">
+                  {saving ? 'Сохраняем…' : 'Сохранить'}
                 </button>
-              ) : null}
-              <button type="submit" disabled={!canSave || locked}
-                className="min-h-11 rounded-full bg-shared-ink px-4 text-[13.5px] font-bold text-white transition-colors enabled:hover:bg-indigo-600 disabled:bg-[#EEF0F7] disabled:text-shared-muted sm:px-5">
-                {saving ? 'Сохраняем…' : 'Сохранить'}
-              </button>
+              </div>
             </div>
-          </div>
         </form>
-      )}
+      </motion.div>
     </motion.section>
   )
 }
