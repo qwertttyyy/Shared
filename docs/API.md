@@ -33,6 +33,7 @@
 | DELETE | `/api/items/{id}` | `{"ok":true}` после удаления заметки |
 | POST | `/api/items/batch-delete` | `{"deleted":3}` с количеством удалённых записей |
 | GET | `/api/items/{id}/content` | Встроенное изображение, только JPEG/PNG/WebP |
+| GET | `/api/items/{id}/text-preview` | `{"text":"…"}` для текстового файла в UTF‑8 размером до 512 КиБ. Для больших файлов возвращает `413`, для неподдерживаемого содержимого — `415` |
 | GET | `/api/items/{id}/download` | Исходный файл как attachment |
 
 `POST /api/items/text` и `PATCH /api/items/{id}` принимают `{"text":"Купить кофе"}`.

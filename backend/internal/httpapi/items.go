@@ -99,9 +99,12 @@ func readNoteText(w http.ResponseWriter, r *http.Request) (string, bool) {
 		fail(w, 400, "Неверный формат данных")
 		return "", false
 	}
-	data.Text = strings.TrimSpace(data.Text)
-	if data.Text == "" || !utf8.ValidString(data.Text) || utf8.RuneCountInString(data.Text) > 10000 {
+	if strings.TrimSpace(data.Text) == "" || !utf8.ValidString(data.Text) || utf8.RuneCountInString(data.Text) > 10000 {
 		fail(w, 400, "Введите текст до 10 000 символов")
+		return "", false
+	}
+	if strings.ContainsRune(data.Text, '\x00') {
+		fail(w, 400, "Заметка содержит недопустимый нулевой символ")
 		return "", false
 	}
 	return data.Text, true

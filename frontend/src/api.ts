@@ -65,6 +65,9 @@ export const api = {
   items(page: number, signal: AbortSignal) {
     return request<ItemsPage>(`/items?page=${page}`, { signal })
   },
+  textPreview(id: string, signal: AbortSignal) {
+    return request<{ text: string }>('/items/' + encodeURIComponent(id) + '/text-preview', { signal })
+  },
   createText(text: string) {
     return request<Item>('/items/text', { method: 'POST', body: JSON.stringify({ text }) })
   },

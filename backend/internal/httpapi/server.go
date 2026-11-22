@@ -49,6 +49,7 @@ func NewRouter(db *gorm.DB, files *storage.Local, hub *realtime.Hub, cfg config.
 		r.With(a.requireCSRF).Delete("/api/items/{id}", a.deleteText)
 		r.Get("/api/items/{id}/download", a.downloadFile)
 		r.Get("/api/items/{id}/content", a.previewFile)
+		r.Get("/api/items/{id}/text-preview", a.previewTextFile)
 		r.Get("/api/ws", a.websocket)
 	})
 	return r

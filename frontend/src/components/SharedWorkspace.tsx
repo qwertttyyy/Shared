@@ -7,6 +7,7 @@ import { DeleteSelectionDialog } from './DeleteSelectionDialog'
 import { ImageLightbox } from './ImageLightbox'
 import { NoteEditor } from './NoteEditor'
 import { InstallAppButton } from './PwaControls'
+import { TextFilePreview } from './TextFilePreview'
 import { WorkspaceCard } from './WorkspaceCard'
 import { WorkspaceComposer, composerLayoutTransition, type SaveDraft } from './WorkspaceComposer'
 
@@ -164,6 +165,9 @@ export default function SharedWorkspace({ items, online, loading, saving, onSave
       ) : null}
       {selectedNote ? (
         <NoteEditor key={selectedNote.id} note={selectedNote} onSave={onUpdateNote} onDelete={onDeleteNote} onClose={() => setSelectedNote(null)} />
+      ) : null}
+      {preview?.textPreviewFormat ? (
+        <TextFilePreview key={preview.id} item={preview} format={preview.textPreviewFormat} onClose={() => setPreview(null)} />
       ) : null}
       <AnimatePresence>
         {preview?.imageUrl ? (

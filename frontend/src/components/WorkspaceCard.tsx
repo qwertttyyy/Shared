@@ -1,7 +1,8 @@
-import { memo, useEffect, useState, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ArrowDownToLine, ArrowUpRight, Check, Copy, FileText, Maximize2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { analyzeNote, formatDateCompact, formatFileSize, type SharedFile, type SharedItem, type SharedNote } from '../types'
+import { NoteContentPreview } from './NoteContentPreview'
 
 const palettes = [
   { bg: 'bg-[#FFF1C2] text-[#2D2408]', muted: 'text-[#7D6B28]', action: 'bg-[#2D2408] text-[#FFF1C2]' },
@@ -26,7 +27,8 @@ function NoteCard({ item, index, compact, onOpen, selection }: {
   item: SharedNote; index: number; compact: boolean; onOpen: (item: SharedNote) => void; selection?: ReactNode
 }) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
-  const info = analyzeNote(item.text)
+  const info = useMemo(() => analyzeNote(item.text), [item.text])
+  const richPreview = info.shape === 'markdown' || info.shape === 'code'
   const compactNote = Array.from(item.text.split('\n', 5).slice(0, 4).join('\n')).slice(0, 280).join('')
   const truncated = compactNote.length < item.text.length
   const text = truncated ? compactNote + '…' : item.text
@@ -80,7 +82,9 @@ function NoteCard({ item, index, compact, onOpen, selection }: {
     decoration = listCard + (selection ? listSelectionPadding : '')
     content = <>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm leading-snug font-bold whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</p>
+        {richPreview ? <NoteContentPreview preview={info} layout="compact" /> : (
+          <p className="line-clamp-2 text-sm leading-snug font-bold whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</p>
+        )}
         <CardDate value={item.createdAt} className="mt-1 block text-shared-muted" />
         {copyFeedback}
       </div>
@@ -112,13 +116,13 @@ function NoteCard({ item, index, compact, onOpen, selection }: {
         {noteActions('bg-[#F1F3FA] text-shared-ink group-hover:bg-shared-ink group-hover:text-white')}
       </div>
     </>
-  } else if (info.shape === 'code') {
-    decoration = 'bg-[#102128] p-6 text-[#A7F3D0]'
+  } else if (richPreview) {
+    decoration = (info.shape === 'markdown' ? 'bg-white ring-1 ring-shared-ink/5' : 'bg-[#EAF0FA]') + ' p-6'
     content = <>
-      <pre className={'thin-scrollbar my-2 overflow-x-auto font-mono text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] ' + (selection ? 'pr-10' : 'pr-6')}>{text}</pre>
+      <div className={selection ? 'pr-8' : undefined}><NoteContentPreview preview={info} layout="card" /></div>
       <div className="mt-5 flex items-center justify-between gap-2">
-        <CardDate value={item.createdAt} className="text-[#83C7AF]" />
-        {noteActions('bg-white/10 text-white group-hover:bg-white/20')}
+        <CardDate value={item.createdAt} className="text-shared-muted" />
+        {noteActions('bg-white text-shared-ink ring-1 ring-shared-ink/5 hover:bg-indigo-50')}
       </div>
     </>
   } else {
@@ -156,10 +160,11 @@ function FileCard({ item, compact, onPreview, selection }: {
   const [failedImageUrl, setFailedImageUrl] = useState<string>()
   const size = formatFileSize(item.fileSize)
   const downloadLabel = 'Скачать ' + item.fileName
+  const previewLabel = 'Открыть ' + item.fileName
   const hideAction = selection ? ' invisible' : ''
 
   if (compact) {
-    const preview = item.imageUrl && failedImageUrl !== item.imageUrl
+    const preview = item.textPreviewFormat || (item.imageUrl && failedImageUrl !== item.imageUrl)
     return (
       <motion.article layout="position" {...cardMotion} className={'relative ' + listCard + (selection ? listSelectionPadding : '')}>
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#EAF0FF] text-[#234589]">
@@ -174,7 +179,7 @@ function FileCard({ item, compact, onPreview, selection }: {
           </p>
         </div>
         {preview && !selection ? (
-          <button type="button" aria-label={'Открыть ' + item.fileName} onClick={() => onPreview(item)} className={roundAction + ' hover:bg-indigo-50'}>
+          <button type="button" aria-label={previewLabel} onClick={() => onPreview(item)} className={roundAction + ' hover:bg-indigo-50'}>
             <Maximize2 className="size-3.5" />
           </button>
         ) : null}
@@ -192,7 +197,7 @@ function FileCard({ item, compact, onPreview, selection }: {
     return (
       <motion.article layout {...cardMotion} className="group relative overflow-hidden rounded-[30px] bg-shared-ink">
         <div className="relative">
-          <button type="button" aria-label={'Открыть ' + item.fileName} onClick={() => onPreview(item)}
+          <button type="button" aria-label={previewLabel} onClick={() => onPreview(item)}
             inert={Boolean(selection)} aria-hidden={selection ? true : undefined}
             className="block h-60 w-full cursor-zoom-in! overflow-hidden focus-visible:-outline-offset-4">
             <img src={item.imageUrl} alt="" loading="lazy" decoding="async" onError={() => setFailedImageUrl(item.imageUrl)}
@@ -221,11 +226,11 @@ function FileCard({ item, compact, onPreview, selection }: {
     )
   }
 
-  const FileContent = selection ? 'div' : 'a'
-  const download = selection ? {} : { href: item.downloadUrl, download: item.fileName, 'aria-label': downloadLabel }
+  const FileContent = selection || item.textPreviewFormat ? 'div' : 'a'
+  const download = { href: item.downloadUrl, download: item.fileName, 'aria-label': downloadLabel }
   return (
     <motion.article layout {...cardMotion} className={'group relative rounded-[30px] bg-[#DCE8FF] text-[#123278] ' + liftCard}>
-      <FileContent {...download} className="relative block overflow-hidden rounded-[inherit] p-6">
+      <FileContent {...(FileContent === 'a' ? download : {})} className="relative block overflow-hidden rounded-[inherit] p-6">
         <span aria-hidden="true" className="pointer-events-none absolute -right-3 -bottom-5 font-display text-[68px] leading-none font-bold tracking-tighter text-[#123278]/8 uppercase select-none">
           {item.fileExt}
         </span>
@@ -236,9 +241,21 @@ function FileCard({ item, compact, onPreview, selection }: {
         {item.caption ? <p className="relative -mt-3 mb-4 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">{item.caption}</p> : null}
         <div className="relative flex items-center justify-between gap-2">
           <CardDate value={item.createdAt} className="text-[#3E5FA8]" />
-          <span className={roundAction + ' size-10 bg-[#102A66] text-white group-hover:bg-indigo-600' + hideAction}>
-            <ArrowDownToLine className="size-4" />
-          </span>
+          {item.textPreviewFormat && !selection ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <button type="button" aria-label={previewLabel} onClick={() => onPreview(item)}
+                className={roundAction + ' size-10 bg-white/75 text-[#102A66] hover:bg-white'}>
+                <Maximize2 className="size-4" />
+              </button>
+              <a {...download} className={roundAction + ' size-10 bg-[#102A66] text-white hover:bg-indigo-600'}>
+                <ArrowDownToLine className="size-4" />
+              </a>
+            </div>
+          ) : (
+            <span className={roundAction + ' size-10 bg-[#102A66] text-white group-hover:bg-indigo-600' + hideAction}>
+              <ArrowDownToLine className="size-4" />
+            </span>
+          )}
         </div>
       </FileContent>
       {selection}

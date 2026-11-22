@@ -196,7 +196,7 @@ export function WorkspaceComposer({ onSave, saving, disabled, previewOpen }: Wor
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (locked || pasting || submitting.current || !canSave) return
-    const draft = text.trim()
+    const draft = attachments.length ? text.trim() : text
     const limit = attachments.length ? captionLimit : noteLimit
     if ([...draft].length > limit) {
       setError(attachments.length ? 'Подпись не должна превышать 500 символов.' : 'Заметка не должна превышать 10 000 символов.')
